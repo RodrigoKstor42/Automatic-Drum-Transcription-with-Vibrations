@@ -1,0 +1,22 @@
+name: adtof-env
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - scipy
+  - matplotlib
+  - jupyter
+
+  - pip:
+      - tensorflow==2.13.0
+      - tf_keras
+      - librosa
+      - soundfile
+      - pretty_midi
+      - madmom
+      - typing-extensions==4.5.0
