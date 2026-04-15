@@ -12,16 +12,17 @@ Posteriormente, se plantea adaptarlo para operar con señales vibratorias captad
 4. Validar funcionamiento del modelo con archivos .wav
 5. Preparar la base para adaptación a señales piezoeléctricas
 
-# Proceso de replicación
+## Proceso de replicación
 Para correr el modelo correctamente, se puede realizar de dos maneras:
 
-## Google Colab Notebook
+### Google Colab Notebook
 Se puede correr el modelo con el siguiente Notebook de [Google Colab](https://colab.research.google.com/drive/1G_UeWav_AMaaqfJxR4cVgH5EdrvsDQGT?usp=sharing#scrollTo=glwHAUsGpy9s), esto producira un ejemplo de transcripcion de un video.
 
-## Clonar repositorio directamente a la PC
+### Clonar repositorio directamente a la PC
 Es posible clonar el repositorio directamente a una computadora para correrlo localmente con Visual Studio Code, de esta manera es posible cargar un archivo .wav propio y realizar su transcripción.
-Este repositorio fue probado con python 3.10.
-### Requisitos:
+Este repositorio contiene información para la replicación desde su computadora.
+
+## Requisitos:
 Para asegurar la reproducibilidad, este proyecto requiere:
 
 - Python 3.10
@@ -29,7 +30,7 @@ Para asegurar la reproducibilidad, este proyecto requiere:
 - pip (incluido con python)
 - Git
 
-# Instalación de Conda
+### Instalación de Conda
 Se recomienda instalar miniconda (una versión mas ligera de Anaconda)
 
 1. Windows/macOS/linux
@@ -40,42 +41,96 @@ Se recomienda instalar miniconda (una versión mas ligera de Anaconda)
 2. Verifica la instalación:
 Abre una terminal (CMD/Powershell/Bash) y ejecuta:
 
-```python
+```
 conda --version
 ```
-# Instalación de Git
+### Instalación de Git
 Descarga Git desde: https://git-scm.com/
 
-# Versión de Python
-Este proyecto usa Python 3.10, conda instalará python automaticamente.
+Verifica la instalación desde una terminal (CMD/Powershell/Bash) con:
 
-
-
-
-### Instalación:
-Este proyecto puede ser instalado y ejecutado desde Microsoft Visual Studio Code o desde una terminal cmd en su computadora.
-
-## Microsoft Visual Studio Code
-- Descarga el repositorio y abre la carpeta correspondiente al repositorio en Visual Studio Code.
-- Abre una terminal y ejecuta:
-
-```python
-conda env create -f environment.yml
+```
+git --version
 ```
 
-- El archivo environment.yml contiene todas dependencias especificas para que el repositorio corra correctamente.
-  
-- Activa el entorno ejecutando la siguiente linea en la misma terminal: 
+### Versión de Python
+Este proyecto usa **Python 3.10**, conda instalará python automaticamente.
 
-```python
+
+
+
+## Instalación
+
+### Clonar repositorio
+En una terminal (CMD/Powershell/Bash), ejecuta:
+
+```
+git clone <REPO_URL>
+cd Automatic-Drum-Transcription-with-Vibrations
+```
+
+También se puede descargar el repositorio completo en formato .zip y extraerlo en la ubicación que se desee.
+
+### Crea entorno de trabajo
+En una terminal (CMD /Powershell/Bash), ejecuta:
+
+```Python
+conda env create -f environment.yml
 conda activate adtof_rod
 ```
+Ahora el entorno de trabajo donde ejecutaremos los demas comandos del repo esta activado y se trabajará en esta misma terminal de ahora en adelante.
 
-- ⚠️ IMPORTANTE: este proyecto utiliza la libreria madmom la cual presenta conflictos con otras librerias por lo que se deberá ejecutar el siguiente parche, de igual manera en la misma terminal y con el entorno activado, ejecuta:
+### Aplica parche requerido para libreria madmom (⚠️IMPORTANTE)
+Existen problemas de compatibilidad entre algunas dependencias del repositorio y la libreria madmom (libreria importante para transcripción automatica de música), ejecuta el siguiente comando en la terminal donde activaste el entorno para que el parche se instale:
 
-```python
+```Python
 python fix_madmom.py
 ```
 
-### Ejecución:
+### Instala Jupyter (si es necesario)
+Con el entorno activado ejecuta en la terminal:
+
+```Python
+pip list
+```
+
+Este comando mostrara todas las librerias y dependencias instaladas en el entorno que tenemos activado, si no se muestra Jupyter se deberá instalar con el siguiente comando:
+
+```Python
+pip install notebook
+```
+## Ejecutar el proyecto
+🔵OPCIÓN A: Mediante Terminal + Navegador
+1. Abre una terminal (CMD/Powershell/Bash), abrimos el entorno que instalamos, y ejecuta:
+
+```Python
+jupyter notebook
+```
+Esto abrirá una ventana de Jupyter Notebooks en el navegador predeterminado. Busca la ubicacion donde descargaste el repositorio, una vez en la ubicación del repositorio, navega hasta encontrar:
+
+```
+bin/drumTranscriptor.ipynb
+```
+
+2. Selecciona el kernel correcto
+En Jupyter:
+- Haz clic en "*Kernel*" y selecciona "*Change Kernel*"
+- Selecciona:
+```
+Python (adtof_rod)
+```
+
+3. Corre las celdas
+Se puede correr todas las celdas a la vez seleccionando la opcion "*Run*" y haciendo clic en "*Run All*"
+
+🔵OPCIÓN B: Mediante Microsoft Visual Studio Code
+1. Abre el folder que se extrajo del archivo .zip en Visual Studio Code
+2. Selecciona el interprete de Python correcto, presiona "*Ctrl + Shift + P*", selecciona "*Python: Select Interpreter*" y elige "*Python 3.10 (adtof_rod)*"
+3. Abre el notebook "*drumTranscriptor.ipynb*"
+4. Clic en "*Run All*"
+- Descarga el repositorio y abre la carpeta correspondiente al repositorio en Visual Studio Code.
+- Abre una terminal y ejecuta:
+
+
+# Ejecución
 El repositorio ya viene con 3 archivos .wav de ejemplo para realizar transcripciones de prueba, estos archivos se encuentran en la carpeta audio_files, se producira un grafico de la transcripción resultante y adicionalmente se generará un archivo .mid conteniendo las notas transcritas para ser cargados a un software de interpretación MIDI, estos archivos .mid se guardaran en la carpeta audio_output.
