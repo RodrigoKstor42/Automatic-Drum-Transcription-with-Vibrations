@@ -1,0 +1,106 @@
+{
+  "phrase_id": "basic_groove_phrase_000001",
+  "profile_name": "basic_groove",
+  "sample_rate": 12000,
+  "bpm": 98.09581912082906,
+  "total_events": 8,
+  "phrase_duration_seconds": 4.417,
+  "contains_fill": true,
+  "contains_overlap": true,
+  "generation_seed": 8,
+  "density_level": "high",
+  "format": "mono_float32_wav",
+  "peak": 0.94,
+  "duration": 4.417,
+  "tail_padding_seconds": 1.25,
+  "events": [
+    {
+      "instrument": "KD",
+      "class": "KD",
+      "timestamp": 0.0,
+      "onset_sample": 0,
+      "duration": 0.72,
+      "gain": 0.891,
+      "render_gain": 0.643,
+      "timing_offset_seconds": -0.000274,
+      "source_wav": "MUESTRAS\\KD\\hit_117 (2).wav"
+    },
+    {
+      "instrument": "SD",
+      "class": "SD",
+      "timestamp": 0.306167,
+      "onset_sample": 3674,
+      "duration": 0.66,
+      "gain": 0.303,
+      "render_gain": 0.24,
+      "timing_offset_seconds": 0.000381,
+      "source_wav": "MUESTRAS\\SD\\hit_253 (9).wav"
+    },
+    {
+      "instrument": "SD",
+      "class": "SD",
+      "timestamp": 0.611667,
+      "onset_sample": 7340,
+      "duration": 0.66,
+      "gain": 0.827,
+      "render_gain": 0.655,
+      "timing_offset_seconds": 2.1e-05,
+      "source_wav": "MUESTRAS\\SD\\hit_257 (2).wav"
+    },
+    {
+      "instrument": "KD",
+      "class": "KD",
+      "timestamp": 0.916917,
+      "onset_sample": 11003,
+      "duration": 0.719917,
+      "gain": 0.821,
+      "render_gain": 0.592,
+      "timing_offset_seconds": -0.000553,
+      "source_wav": "MUESTRAS\\KD\\hit_065 (7).wav"
+    },
+    {
+      "instrument": "KD",
+      "class": "KD",
+      "timestamp": 1.223167,
+      "onset_sample": 14678,
+      "duration": 0.72,
+      "gain": 0.979,
+      "render_gain": 0.706,
+      "timing_offset_seconds": -0.000137,
+      "source_wav": "MUESTRAS\\KD\\hit_099.wav"
+    },
+    {
+      "instrument": "T14",
+      "class": "T14",
+      "timestamp": 1.834167,
+      "onset_sample": 22010,
+      "duration": 0.719917,
+      "gain": 0.831,
+      "render_gain": 0.731,
+      "timing_offset_seconds": -0.000739,
+      "source_wav": "MUESTRAS\\T14\\hit_321 (5).wav"
+    },
+    {
+      "instrument": "KD",
+      "class": "KD",
+      "timestamp": 2.447083,
+      "onset_sample": 29365,
+      "duration": 0.719917,
+      "gain": 0.961,
+      "render_gain": 0.693,
+      "timing_offset_seconds": 0.000506,
+      "source_wav": "MUESTRAS\\KD\\hit_023 (5).wav"
+    },
+    {
+      "instrument": "SD",
+      "class": "SD",
+      "timestamp": 2.446333,
+      "onset_sample": 29356,
+      "duration": 0.67,
+      "gain": 0.809,
+      "render_gain": 0.641,
+      "timing_offset_seconds": -0.00028,
+      "source_wav": "MUESTRAS\\SD\\hit_059 (11).wav"
+    }
+  ]
+}
