@@ -134,3 +134,34 @@ Se puede correr todas las celdas a la vez seleccionando la opcion "*Run*" y haci
 
 # Ejecución
 El repositorio ya viene con 3 archivos .wav de ejemplo para realizar transcripciones de prueba, estos archivos se encuentran en la carpeta audio_files, se producira un grafico de la transcripción resultante y adicionalmente se generará un archivo .mid conteniendo las notas transcritas para ser cargados a un software de interpretación MIDI, estos archivos .mid se guardaran en la carpeta audio_output.
+
+# Generador de frases de batería
+El presente proyecto se enfoca en realizar la transcripción automática de baterias mediante el uso de señales vibratorias provenientes de las membranas de los cuerpos de la bateria y capturadas con sensores del tipo piezoelectrico llamados "triggers", y elementos de Machine Learning, de esta manera el sistema podra transcribir golpes con distintas dinamicas. Para lograr esto se grabaron grandes numeros de muestras de golpes individuales de los cuerpos de la bateria, estos cuerpos son el BOMBO (KD), la caja (SD) y los toms de 12, 14 y 16 pulgadas (T12, T14, T16), se grabaron muestras en frecuencias de muestreo de 8KHZ y 12KHZ y con dinamicas de golpes fuertes, medios y suaves o ghost notes.
+Este modelo utiliza muestras o frases de bateria, aqui definimos una frase como un fragmento corto de golpes sucesivos de bateria, donde se utilizan distintos elementos de la bateria, en pocas palabras, pueden definirse como pequeñas improvisaciones o fills que usan distintos cuerpos de la bateria, a distintos tempos y dinamicas.
+## OBJETIVO
+Debido a esta particularidad del modelo, el objetivo especifico de este repo es el de realizar la generacion procedural de estas frases de bateria para el entrenamiento del modelo.
+
+## GENERACION MASIVA POR PERFILES
+El generador procedural actual permite seleccionar perfiles reutilizables desde `SRC/generation_profiles.py`. Cada perfil controla rango de BPM, minimo y maximo de eventos, probabilidad de fills, probabilidad de toms, densidad ritmica, overlaps naturales, humanizacion temporal y variacion dinamica.
+
+🔵Perfiles iniciales disponibles:
+- `basic_groove`
+- `standard_rock`
+- `fill_heavy`
+- `fast_dense`
+- `humanized_mixed`
+
+Ejemplo para generar 1000 frases usando el perfil `standard_rock`:
+
+```bash
+python SRC/phrase_generator.py --profile standard_rock --count 1000
+```
+
+Ejemplo para forzar un BPM fijo y mantener el resto del perfil:
+
+```bash
+python SRC/phrase_generator.py --profile fill_heavy --count 1000 --bpm 120
+```
+
+Si no se define `--bpm`, cada frase usa un BPM aleatorio dentro del rango configurado por el perfil. La exportacion WAV y JSON mantiene el pipeline DSP actual: audio mono, 48 kHz, `float32`, normalizacion por peak y labels sincronizados.
+
