@@ -132,7 +132,7 @@ Se puede correr todas las celdas a la vez seleccionando la opcion "*Run*" y haci
 - Abre una terminal y ejecuta:
 
 
-# Ejecución
+## Ejecución
 El repositorio ya viene con 3 archivos .wav de ejemplo para realizar transcripciones de prueba, estos archivos se encuentran en la carpeta audio_files, se producira un grafico de la transcripción resultante y adicionalmente se generará un archivo .mid conteniendo las notas transcritas para ser cargados a un software de interpretación MIDI, estos archivos .mid se guardaran en la carpeta audio_output.
 
 # Generador de frases de batería
@@ -141,8 +141,18 @@ Este modelo utiliza muestras o frases de bateria, aqui definimos una frase como 
 ## OBJETIVO
 Debido a esta particularidad del modelo, el objetivo especifico de este repo es el de realizar la generacion procedural de estas frases de bateria para el entrenamiento del modelo.
 
+### Crea entorno de trabajo
+En una terminal (CMD /Powershell/Bash), ejecuta:
+
+```Python
+conda env create -f requirements.yml
+conda activate adtof_phrase_generator
+```
+Ahora el entorno de trabajo donde ejecutaremos los demas comandos del repo esta activado y se trabajará en esta misma terminal de ahora en adelante.
+
+
 ## GENERACION MASIVA POR PERFILES
-El generador procedural actual permite seleccionar perfiles reutilizables desde `SRC/generation_profiles.py`. Cada perfil controla rango de BPM, minimo y maximo de eventos, probabilidad de fills, probabilidad de toms, densidad ritmica, overlaps naturales, humanizacion temporal y variacion dinamica.
+El generador procedural actual permite seleccionar perfiles reutilizables desde `PHRASE_GENERATOR/SRC/generation_profiles.py`. Cada perfil controla rango de BPM, minimo y maximo de eventos, probabilidad de fills, probabilidad de toms, densidad ritmica, overlaps naturales, humanizacion temporal y variacion dinamica.
 
 🔵Perfiles iniciales disponibles:
 - `basic_groove`
@@ -154,13 +164,13 @@ El generador procedural actual permite seleccionar perfiles reutilizables desde 
 Ejemplo para generar 1000 frases usando el perfil `standard_rock`:
 
 ```bash
-python SRC/phrase_generator.py --profile standard_rock --count 1000
+python PHRASE_GENERATOR/SRC/phrase_generator.py --profile standard_rock --count 1000
 ```
 
 Ejemplo para forzar un BPM fijo y mantener el resto del perfil:
 
 ```bash
-python SRC/phrase_generator.py --profile fill_heavy --count 1000 --bpm 120
+python PHRASE_GENERATOR/SRC/phrase_generator.py --profile fill_heavy --count 1000 --bpm 120
 ```
 
 Si no se define `--bpm`, cada frase usa un BPM aleatorio dentro del rango configurado por el perfil. La exportacion WAV y JSON mantiene el pipeline DSP actual: audio mono, 48 kHz, `float32`, normalizacion por peak y labels sincronizados.
