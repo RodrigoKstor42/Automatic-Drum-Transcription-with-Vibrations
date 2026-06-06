@@ -149,7 +149,10 @@ conda env create -f requirements.yml
 conda activate adtof_phrase_generator
 ```
 Ahora el entorno de trabajo donde ejecutaremos los demas comandos del repo esta activado y se trabajará en esta misma terminal de ahora en adelante.
+ ### DESCARGA DE DATASET GENERADO
+ Debido a que el dataset donde se encuentran las muestras de datos vibracionales de cada elemento de la bateria es muy extenso, se debe descargar desde: [DATASET GENERADO](https://drive.google.com/drive/folders/1Foz00qrkVIi96EjonxatYKqrwOyJMr42?usp=sharing)
 
+ Una vez descargada la carpeta correspondiente al dataset generado, el contenido debe extrarse dentro de la carpeta PHRASE_GENERATOR, asumiendo que el repositorio esta descargado en su computadora.
 
 ## GENERACION MASIVA POR PERFILES
 El generador procedural actual permite seleccionar perfiles reutilizables desde `PHRASE_GENERATOR/SRC/generation_profiles.py`. Cada perfil controla rango de BPM, minimo y maximo de eventos, probabilidad de fills, probabilidad de toms, densidad ritmica, overlaps naturales, humanizacion temporal y variacion dinamica.

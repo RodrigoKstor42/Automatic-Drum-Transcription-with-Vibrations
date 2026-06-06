@@ -208,9 +208,11 @@ __marimo__/
 .vscode/
 
 # Dataset generado / datos pesados
-PHRASE_GENERATOR/
-audio_files/
-audio_output/
+PHRASE_GENERATOR/GENERATED_RAW
+PHRASE_GENERATOR/MUESTRAS
+PHRASE_GENERATOR/TEST
+PHRASE_GENERATOR/TRAIN
+PHRASE_GENERATOR/VAL
 
 
 # Caches de procesamiento

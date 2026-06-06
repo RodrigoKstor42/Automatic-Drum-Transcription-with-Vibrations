@@ -1,0 +1,47 @@
+{
+  "seed": 7,
+  "split_ratios": {
+    "TRAIN": 0.8,
+    "VAL": 0.1,
+    "TEST": 0.1
+  },
+  "total_samples": 12000,
+  "train_count": 9600,
+  "val_count": 1200,
+  "test_count": 1200,
+  "profile_distribution": {
+    "basic_groove": 2500,
+    "fast_dense": 1500,
+    "fill_heavy": 2500,
+    "humanized_mixed": 1500,
+    "standard_rock": 4000
+  },
+  "bpm_statistics": {
+    "count": 12000,
+    "min": 80.013564,
+    "max": 189.997768,
+    "mean": 121.726835,
+    "median": 116.131081,
+    "stdev": 22.941589
+  },
+  "overlap_statistics": {
+    "with_overlap": 12000,
+    "without_overlap": 0,
+    "overlap_ratio": 1.0
+  },
+  "density_statistics": {
+    "density_level_distribution": {
+      "high": 8963,
+      "low": 488,
+      "medium": 2549
+    },
+    "total_events_statistics": {
+      "count": 12000,
+      "min": 4.0,
+      "max": 16.0,
+      "mean": 8.63025,
+      "median": 9.0,
+      "stdev": 2.396602
+    }
+  }
+}
