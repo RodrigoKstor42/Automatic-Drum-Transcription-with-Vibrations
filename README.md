@@ -166,8 +166,14 @@ El generador procedural actual permite seleccionar perfiles reutilizables desde 
 
 Ejemplo para generar 1000 frases usando el perfil `standard_rock`:
 
-```bash
-python PHRASE_GENERATOR/SRC/phrase_generator.py --profile standard_rock --count 1000
+```powershell
+conda run -n drum_tools python .\PHRASE_GENERATOR\SRC\phrase_generator.py `
+  --profile standard_rock `
+  --count 1000 `
+  --output-root .\PHRASE_GENERATOR\CUSTOM_NORMALIZED `
+  --target-sr 12000 `
+  --wav-subtype PCM_16 `
+  --peak-limit 0.98
 ```
 
 Ejemplo para forzar un BPM fijo y mantener el resto del perfil:
@@ -176,5 +182,25 @@ Ejemplo para forzar un BPM fijo y mantener el resto del perfil:
 python PHRASE_GENERATOR/SRC/phrase_generator.py --profile fill_heavy --count 1000 --bpm 120
 ```
 
-Si no se define `--bpm`, cada frase usa un BPM aleatorio dentro del rango configurado por el perfil. La exportacion WAV y JSON mantiene el pipeline DSP actual: audio mono, 48 kHz, `float32`, normalizacion por peak y labels sincronizados.
+Si no se define `--bpm`, cada frase usa un BPM aleatorio dentro del rango configurado por el perfil. La exportacion crea `AUDIO` y `LABELS` dentro de `--output-root`. Los WAV se escriben en mono, 12 kHz y PCM16; solo se reduce la ganancia cuando el peak supera `--peak-limit`. La cantidad de frames no cambia, por lo que los JSON permanecen sincronizados.
 
+Para crear los splits finales:
+
+```powershell
+conda run -n drum_tools python .\PHRASE_GENERATOR\SRC\dataset_splitter.py `
+  --raw-audio-dir .\CUSTOM_NORMALIZED\AUDIO `
+  --raw-labels-dir .\CUSTOM_NORMALIZED\LABELS `
+  --output-root .\CUSTOM_NORMALIZED_SPLIT `
+  --summary-path .\CUSTOM_NORMALIZED_SPLIT\dataset_summary.json `
+  --clean
+
+conda run -n drum_tools python .\PHRASE_GENERATOR\json_to_adtof_txt.py `
+  --root .\CUSTOM_NORMALIZED_SPLIT
+```
+
+Verificacion tecnica de los WAV:
+
+```powershell
+conda run -n drum_tools python .\scripts\check_wav_dataset_format.py `
+  --dataset-root .\CUSTOM_NORMALIZED_SPLIT
+```

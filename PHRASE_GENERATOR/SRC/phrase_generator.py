@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -16,10 +17,13 @@ from generation_profiles import GENERATION_PROFILES, STANDARD_ROCK, GenerationPr
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SAMPLES_DIR = PROJECT_ROOT / "MUESTRAS"
-OUTPUT_AUDIO_DIR = PROJECT_ROOT / "GENERADAS" / "TRAIN" / "AUDIO"
-OUTPUT_LABELS_DIR = PROJECT_ROOT / "GENERADAS" / "TRAIN" / "LABELS"
+DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "GENERATED_RAW"
+OUTPUT_AUDIO_DIR = DEFAULT_OUTPUT_ROOT / "AUDIO"
+OUTPUT_LABELS_DIR = DEFAULT_OUTPUT_ROOT / "LABELS"
 
 TARGET_SR = 12_000
+DEFAULT_WAV_SUBTYPE = "PCM_16"
+DEFAULT_PEAK_LIMIT = 0.98
 PEAK_TARGET = 0.94
 DEFAULT_BPM = 120
 DEFAULT_PHRASE_COUNT = 100
@@ -183,6 +187,55 @@ def peak_normalize(audio: np.ndarray, target_peak: float = PEAK_TARGET) -> np.nd
     return (audio * (target_peak / peak)).astype(np.float32)
 
 
+def prepare_wav_audio(audio: np.ndarray, peak_limit: float = DEFAULT_PEAK_LIMIT) -> np.ndarray:
+    if not 0.0 < peak_limit <= 1.0:
+        raise ValueError("peak_limit must be greater than 0 and less than or equal to 1.")
+
+    prepared = np.asarray(audio)
+    if prepared.ndim == 2:
+        if prepared.shape[0] <= 8 and prepared.shape[1] > prepared.shape[0]:
+            prepared = prepared.T
+        prepared = np.mean(prepared, axis=1)
+    elif prepared.ndim != 1:
+        raise ValueError(f"Audio must be one- or two-dimensional, got shape {prepared.shape}.")
+
+    prepared = prepared.astype(np.float64, copy=False)
+    invalid_count = int(np.count_nonzero(~np.isfinite(prepared)))
+    if invalid_count:
+        warnings.warn(
+            f"Replacing {invalid_count} NaN/Inf audio samples with zero.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+        prepared = np.nan_to_num(prepared, nan=0.0, posinf=0.0, neginf=0.0)
+
+    peak = float(np.max(np.abs(prepared))) if prepared.size else 0.0
+    if peak > peak_limit:
+        prepared = prepared * (peak_limit / peak)
+
+    return np.clip(prepared, -peak_limit, peak_limit).astype(np.float32)
+
+
+def write_wav_pcm16(
+    path: Path,
+    audio: np.ndarray,
+    sr: int = TARGET_SR,
+    peak_limit: float = DEFAULT_PEAK_LIMIT,
+    subtype: str = DEFAULT_WAV_SUBTYPE,
+) -> np.ndarray:
+    if sr <= 0:
+        raise ValueError("Sample rate must be greater than zero.")
+    if subtype != "PCM_16":
+        raise ValueError("The normalized dataset WAV subtype must be PCM_16.")
+
+    prepared = prepare_wav_audio(audio, peak_limit=peak_limit)
+    pcm16 = np.round(prepared * np.iinfo(np.int16).max).astype(np.int16)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    sf.write(path, pcm16, sr, format="WAV", subtype=subtype)
+    return prepared
+
+
 def pre_mix_gain(sample_class: str) -> float:
     return PRE_MIX_HEADROOM_GAIN * INSTRUMENT_PRE_MIX_GAINS.get(sample_class, 1.0)
 
@@ -318,13 +371,20 @@ def export_phrase(
     phrase_id: str | None = None,
     profile_name: str | None = None,
     generation_seed: int | None = None,
+    wav_subtype: str = DEFAULT_WAV_SUBTYPE,
+    peak_limit: float = DEFAULT_PEAK_LIMIT,
 ) -> None:
-    audio_path.parent.mkdir(parents=True, exist_ok=True)
     labels_path.parent.mkdir(parents=True, exist_ok=True)
 
-    sf.write(audio_path, rendered.audio, rendered.sample_rate, subtype="FLOAT")
+    written_audio = write_wav_pcm16(
+        audio_path,
+        rendered.audio,
+        sr=rendered.sample_rate,
+        peak_limit=peak_limit,
+        subtype=wav_subtype,
+    )
 
-    phrase_duration_seconds = round(rendered.audio.size / rendered.sample_rate, 6)
+    phrase_duration_seconds = round(written_audio.size / rendered.sample_rate, 6)
     payload = {
         "phrase_id": phrase_id or labels_path.stem,
         "profile_name": profile_name or "unknown",
@@ -336,8 +396,10 @@ def export_phrase(
         "contains_overlap": detect_overlaps(rendered.labels),
         "generation_seed": generation_seed,
         "density_level": estimate_density(rendered.labels, rendered.bpm),
-        "format": "mono_float32_wav",
-        "peak": round(float(np.max(np.abs(rendered.audio))) if rendered.audio.size else 0.0, 6),
+        "format": "mono_pcm16_wav",
+        "wav_subtype": wav_subtype,
+        "peak_limit": peak_limit,
+        "peak": round(float(np.max(np.abs(written_audio))) if written_audio.size else 0.0, 6),
         "duration": phrase_duration_seconds,
         "tail_padding_seconds": round(rendered.tail_padding_seconds, 6),
         "events": rendered.labels,
@@ -729,6 +791,8 @@ def generate_training_dataset(
     output_audio_dir: Path = OUTPUT_AUDIO_DIR,
     output_labels_dir: Path = OUTPUT_LABELS_DIR,
     sample_rate: int = TARGET_SR,
+    wav_subtype: str = DEFAULT_WAV_SUBTYPE,
+    peak_limit: float = DEFAULT_PEAK_LIMIT,
     seed: int = 7,
 ) -> None:
     rng = random.Random(seed)
@@ -754,6 +818,8 @@ def generate_training_dataset(
             phrase_id=phrase_id,
             profile_name=profile.name,
             generation_seed=phrase_seed,
+            wav_subtype=wav_subtype,
+            peak_limit=peak_limit,
         )
 
 
@@ -763,13 +829,32 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--count", type=int, default=DEFAULT_PHRASE_COUNT)
     parser.add_argument("--profile", choices=sorted(GENERATION_PROFILES), default=STANDARD_ROCK.name)
     parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        default=DEFAULT_OUTPUT_ROOT,
+        help="Output directory containing AUDIO and LABELS subdirectories.",
+    )
+    parser.add_argument("--target-sr", type=int, default=TARGET_SR)
+    parser.add_argument("--wav-subtype", default=DEFAULT_WAV_SUBTYPE)
+    parser.add_argument("--peak-limit", type=float, default=DEFAULT_PEAK_LIMIT)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     profile = GENERATION_PROFILES[args.profile]
-    generate_training_dataset(phrase_count=args.count, bpm=args.bpm, profile=profile, seed=args.seed)
+    generate_training_dataset(
+        phrase_count=args.count,
+        bpm=args.bpm,
+        profile=profile,
+        output_audio_dir=args.output_root / "AUDIO",
+        output_labels_dir=args.output_root / "LABELS",
+        sample_rate=args.target_sr,
+        wav_subtype=args.wav_subtype,
+        peak_limit=args.peak_limit,
+        seed=args.seed,
+    )
 
 
 if __name__ == "__main__":

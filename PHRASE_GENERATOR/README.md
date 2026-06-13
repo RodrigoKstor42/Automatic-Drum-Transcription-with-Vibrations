@@ -38,8 +38,14 @@ Perfiles iniciales disponibles:
 
 Ejemplo para generar 1000 frases usando el perfil `standard_rock`:
 
-```bash
-python SRC/phrase_generator.py --profile standard_rock --count 1000
+```powershell
+conda run -n drum_tools python .\SRC\phrase_generator.py `
+  --profile standard_rock `
+  --count 1000 `
+  --output-root .\CUSTOM_NORMALIZED `
+  --target-sr 12000 `
+  --wav-subtype PCM_16 `
+  --peak-limit 0.98
 ```
 
 Ejemplo para forzar un BPM fijo y mantener el resto del perfil:
@@ -48,4 +54,11 @@ Ejemplo para forzar un BPM fijo y mantener el resto del perfil:
 python SRC/phrase_generator.py --profile fill_heavy --count 1000 --bpm 120
 ```
 
-Si no se define `--bpm`, cada frase usa un BPM aleatorio dentro del rango configurado por el perfil. La exportacion WAV y JSON mantiene el pipeline DSP actual: audio mono, 48 kHz, `float32`, normalizacion por peak y labels sincronizados.
+Si no se define `--bpm`, cada frase usa un BPM aleatorio dentro del rango configurado por el perfil. La exportacion crea `AUDIO` y `LABELS` dentro de `--output-root`. Los WAV quedan en mono, 12 kHz y PCM16, con peak maximo configurable y sin modificar timestamps, offsets, fades ni colas.
+
+El formato puede verificarse antes o despues del split. Desde la raiz del repositorio:
+
+```powershell
+conda run -n drum_tools python .\scripts\check_wav_dataset_format.py `
+  --dataset-root .\PHRASE_GENERATOR\CUSTOM_NORMALIZED
+```
