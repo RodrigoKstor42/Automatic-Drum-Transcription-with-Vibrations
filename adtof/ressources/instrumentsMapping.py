@@ -111,6 +111,19 @@ MIDI_REDUCED_5 = update(  # Adding TT and CY + RD
     },
     MIDI_REDUCED_3,
 )
+
+# Preserve the five separate vibration/piezo dataset classes.
+MIDI_VIBRO_5 = {
+    35: 35,  # KD
+    36: 35,  # Alternate kick
+    38: 38,  # SD
+    40: 38,  # Alternate snare
+    47: 47,  # T12
+    45: 45,  # T14
+    43: 43,  # T16
+}
+VIBRO_MIDI_5 = MIDI_VIBRO_5
+
 MIDI_REDUCED_6 = update(  # Splitting CY and RD
     {
         51: 51,  # Ride Cymbal 1

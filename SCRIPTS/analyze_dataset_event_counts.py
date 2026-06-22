@@ -8,13 +8,21 @@ from pathlib import Path
 
 import pandas as pd
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-CLASS_ORDER = ["KD", "SD", "TT", "HH", "CY"]
-ACTIVE_CLASSES = ["KD", "SD", "TT"]
-INACTIVE_CLASSES = ["HH", "CY"]
+from adtof import config
+
+
+CLASS_SCHEMA = "vibro_5_toms"
+CLASS_ORDER = list(config.VIBRO_LABELS_5TXT)
+TOM_CLASSES = ["T12", "T14", "T16"]
 SPLIT_ORDER = ["TRAIN", "VAL", "TEST"]
 MAX_PERCENTAGE_POINT_DIFFERENCE = 10.0
-MIN_TT_PERCENTAGE = 20.0
+MIN_TOM_EVENTS_PER_SPLIT = 10
+MIN_TOM_EVENTS_TOTAL = 50
+MAX_CLASS_IMBALANCE_RATIO = 10.0
 
 
 def parse_args():
@@ -152,7 +160,7 @@ def diagnose(counts, percentages):
     if missing_splits:
         warnings.append(f"Missing required splits: {', '.join(missing_splits)}.")
 
-    for class_name in ACTIVE_CLASSES:
+    for class_name in CLASS_ORDER:
         missing_positive = [
             split_name
             for split_name in SPLIT_ORDER
@@ -167,41 +175,49 @@ def diagnose(counts, percentages):
                 f"{class_name} has positive events in TRAIN, VAL, and TEST."
             )
 
-    for class_name in INACTIVE_CLASSES:
-        positive_splits = counts.index[counts[class_name] > 0].tolist()
-        if positive_splits:
+    for class_name in TOM_CLASSES:
+        total = int(counts[class_name].sum())
+        if total < MIN_TOM_EVENTS_TOTAL:
             warnings.append(
-                f"{class_name} should be zero but has events in: "
-                f"{', '.join(positive_splits)}."
+                f"{class_name} has only {total} events across all splits "
+                f"(guideline: at least {MIN_TOM_EVENTS_TOTAL})."
             )
-        else:
-            confirmations.append(f"{class_name} has zero events in every split.")
-
-    active_totals = counts[ACTIVE_CLASSES].sum(axis=1)
-    tt_active_percentages = (
-        counts["TT"].div(active_totals.replace(0, pd.NA)).fillna(0) * 100
-    )
-    for split_name, percentage in tt_active_percentages.items():
-        if percentage < MIN_TT_PERCENTAGE:
+        low_splits = [
+            split_name
+            for split_name in counts.index
+            if counts.loc[split_name, class_name] < MIN_TOM_EVENTS_PER_SPLIT
+        ]
+        if low_splits:
             warnings.append(
-                f"TT is only {percentage:.2f}% of active events in {split_name} "
-                f"(minimum guideline: {MIN_TT_PERCENTAGE:.0f}%)."
+                f"{class_name} has fewer than {MIN_TOM_EVENTS_PER_SPLIT} events "
+                f"in: {', '.join(low_splits)}."
             )
 
-    if {"TRAIN", "TEST"}.issubset(percentages.index):
-        tt_difference = abs(
-            percentages.loc["TRAIN", "TT"] - percentages.loc["TEST", "TT"]
-        )
-        if tt_difference > MAX_PERCENTAGE_POINT_DIFFERENCE:
+    class_totals = counts[CLASS_ORDER].sum(axis=0)
+    positive_totals = class_totals[class_totals > 0]
+    if len(positive_totals) > 1:
+        imbalance_ratio = positive_totals.max() / positive_totals.min()
+        if imbalance_ratio > MAX_CLASS_IMBALANCE_RATIO:
             warnings.append(
-                f"TT differs by {tt_difference:.2f} percentage points between "
-                "TRAIN and TEST."
+                f"Global class imbalance ratio is {imbalance_ratio:.2f} "
+                f"(guideline: at most {MAX_CLASS_IMBALANCE_RATIO:.0f})."
             )
+
+    for split_name in counts.index:
+        split_positive = counts.loc[split_name]
+        split_positive = split_positive[split_positive > 0]
+        if len(split_positive) > 1:
+            imbalance_ratio = split_positive.max() / split_positive.min()
+            if imbalance_ratio > MAX_CLASS_IMBALANCE_RATIO:
+                warnings.append(
+                    f"{split_name} class imbalance ratio is {imbalance_ratio:.2f} "
+                    f"(guideline: at most {MAX_CLASS_IMBALANCE_RATIO:.0f})."
+                )
 
     available_required_splits = [
         split_name for split_name in SPLIT_ORDER if split_name in percentages.index
     ]
-    for class_name in ACTIVE_CLASSES:
+    for class_name in CLASS_ORDER:
         class_percentages = percentages.loc[available_required_splits, class_name]
         if len(class_percentages) >= 2:
             spread = class_percentages.max() - class_percentages.min()
@@ -275,6 +291,9 @@ def save_summary(run_dir, records, confirmations, warnings):
     json_path.write_text(
         json.dumps(
             {
+                "class_schema": CLASS_SCHEMA,
+                "class_names": CLASS_ORDER,
+                "labels": list(config.VIBRO_LABELS_5),
                 "summary": records,
                 "confirmations": confirmations,
                 "warnings": warnings,

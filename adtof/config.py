@@ -203,6 +203,11 @@ LABELS_5 = [35, 38, 47, 42, 49]
 LABELS_5TXT = ["BD", "SD", "TT", "HH", "CY+RD"]
 LABELS_3 = [35, 38, 42]
 
+# Separate 5-class vocabulary for the vibration/piezo dataset.
+VIBRO_LABELS_5 = [35, 38, 47, 45, 43]
+VIBRO_LABELS_5TXT = ["KD", "SD", "T12", "T14", "T16"]
+VIBRO_WEIGHTS_5 = [1.0, 1.0, 1.0, 1.0, 1.0]
+
 # Vogl weights Bass drum (1.0), snare drum (4.0), and hi-hat (1.5)
 # Our set of weights computed with the approach from https://markcartwright.com/files/cartwright2018increasing.pdf section 3.4.1 Task weights
 # Compute the inverse estimated entropy of each label activity distribution

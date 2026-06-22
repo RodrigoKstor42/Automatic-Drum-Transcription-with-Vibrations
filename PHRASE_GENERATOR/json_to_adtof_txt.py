@@ -10,12 +10,14 @@ from typing import Any, Iterable, Sequence
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_SPLITS = ("TRAIN", "VAL", "TEST")
+VIBRO_SCHEMA_NAME = "KD, SD, T12, T14, T16"
 CLASS_TO_MIDI = {
     "KD": 35,
     "SD": 38,
     "T12": 47,
-    "T14": 47,
-    "T16": 47,
+    "T14": 45,
+    "T16": 43,
+    "TT": 47,
 }
 DEFAULT_VELOCITY = 1.0
 
@@ -166,7 +168,10 @@ def convert_dataset(root: Path, splits: Iterable[str]) -> list[ConvertedFile]:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Convert phrase_generator JSON labels to ADTOF tab-separated annotations."
+        description=(
+            "Convert phrase_generator JSON labels to ADTOF tab-separated annotations "
+            f"using the vibration 5-class schema: {VIBRO_SCHEMA_NAME}."
+        )
     )
     parser.add_argument("--root", type=Path, default=PROJECT_ROOT, help="Project root containing TRAIN/VAL/TEST.")
     parser.add_argument(
@@ -184,6 +189,7 @@ def main() -> None:
     root = args.root.resolve()
     splits = [str(split).upper() for split in args.splits]
 
+    logging.info("Using vibration 5-class schema: %s", VIBRO_SCHEMA_NAME)
     converted = convert_dataset(root, splits)
     total_events = sum(item.event_count for item in converted)
 
@@ -199,3 +205,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+

@@ -1,21 +1,31 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import random
+import sys
 import warnings
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import dataclass, replace
+from functools import lru_cache
+from math import gcd
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Sequence
 
-import librosa
 import numpy as np
 import soundfile as sf
+from scipy.signal import resample_poly
 
 from generation_profiles import GENERATION_PROFILES, STANDARD_ROCK, GenerationProfile
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from json_to_adtof_txt import extract_adtof_rows, write_annotation
+
 SAMPLES_DIR = PROJECT_ROOT / "MUESTRAS"
 DEFAULT_OUTPUT_ROOT = PROJECT_ROOT / "GENERATED_RAW"
 OUTPUT_AUDIO_DIR = DEFAULT_OUTPUT_ROOT / "AUDIO"
@@ -35,6 +45,19 @@ FADE_SECONDS = 0.005
 TAIL_PADDING_SECONDS = 1.25
 MICROTIMING_SECONDS_RANGE = (-0.005, 0.005)
 INSTRUMENT_CLASSES = ("KD", "SD", "T12", "T14", "T16")
+TOM_CLASSES = ("T12", "T14", "T16")
+CLASS_NAMES = INSTRUMENT_CLASSES
+CLASS_TO_MIDI = {
+    "KD": 35,
+    "SD": 38,
+    "T12": 47,
+    "T14": 45,
+    "T16": 43,
+}
+SPLITS = ("TRAIN", "VAL", "TEST")
+DEFAULT_TARGET_TOM_SHARE = 0.36
+DEFAULT_TOM_BOOST = 1.5
+TOMBOOST_MIN_EVENTS = 10
 FILL_PROBABILITY = 0.72
 FINAL_TWO_BEAT_FILL_PROBABILITY = 0.28
 GHOST_NOTE_GAIN_RANGE = (0.22, 0.42)
@@ -58,6 +81,13 @@ INSTRUMENT_PRE_MIX_GAINS = {
 }
 SOFT_LIMIT_THRESHOLD = 0.96
 SOFT_LIMIT_DRIVE = 1.15
+KD_STEPS = (0, 8, 2, 6, 10, 14, 4, 12, 3, 7, 11, 15)
+SD_STEPS = (4, 12, 7, 11, 15, 3, 9, 13, 2, 6, 10, 14)
+TOM_STEPS = {
+    "T12": (9, 10, 11, 8, 12, 13, 14, 15),
+    "T14": (11, 12, 13, 10, 14, 15, 9, 8),
+    "T16": (13, 14, 15, 12, 11, 10, 9, 8),
+}
 
 
 @dataclass(frozen=True)
@@ -131,12 +161,16 @@ def seconds_per_beat(bpm: float) -> float:
     return 60.0 / bpm
 
 
-def list_wav_samples(sample_class: str, samples_dir: Path = SAMPLES_DIR) -> list[Path]:
+@lru_cache(maxsize=None)
+def list_wav_samples(
+    sample_class: str,
+    samples_dir: Path = SAMPLES_DIR,
+) -> tuple[Path, ...]:
     class_dir = samples_dir / sample_class
     if not class_dir.is_dir():
         raise FileNotFoundError(f"Sample class directory not found: {class_dir}")
 
-    wavs = sorted(class_dir.glob("*.wav"))
+    wavs = tuple(sorted(class_dir.glob("*.wav")))
     if not wavs:
         raise FileNotFoundError(f"No WAV samples found in: {class_dir}")
     return wavs
@@ -154,7 +188,15 @@ def choose_sample(
 
 
 def load_hit(path: Path, target_sr: int = TARGET_SR) -> np.ndarray:
-    audio, _ = librosa.load(path, sr=target_sr, mono=True, dtype=np.float32)
+    audio, source_sr = sf.read(path, dtype="float32", always_2d=True)
+    audio = np.mean(audio, axis=1, dtype=np.float32)
+    if source_sr != target_sr:
+        common_divisor = gcd(source_sr, target_sr)
+        audio = resample_poly(
+            audio,
+            up=target_sr // common_divisor,
+            down=source_sr // common_divisor,
+        ).astype(np.float32)
     audio = np.nan_to_num(audio, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
 
     peak = float(np.max(np.abs(audio))) if audio.size else 0.0
@@ -373,7 +415,7 @@ def export_phrase(
     generation_seed: int | None = None,
     wav_subtype: str = DEFAULT_WAV_SUBTYPE,
     peak_limit: float = DEFAULT_PEAK_LIMIT,
-) -> None:
+) -> dict:
     labels_path.parent.mkdir(parents=True, exist_ok=True)
 
     written_audio = write_wav_pcm16(
@@ -405,6 +447,7 @@ def export_phrase(
         "events": rendered.labels,
     }
     labels_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return payload
 
 
 def step_to_beat(step: int, grid_steps: int = GRID_STEPS, beats_per_phrase: int = BEATS_PER_PHRASE) -> float:
@@ -823,38 +866,425 @@ def generate_training_dataset(
         )
 
 
+def build_target_shares(
+    target_tom_share: float,
+    balance_individual_toms: bool,
+) -> dict[str, float]:
+    if not 0.0 < target_tom_share < 1.0:
+        raise ValueError("target_tom_share must be between 0 and 1.")
+
+    groove_share = (1.0 - target_tom_share) / 2.0
+    tom_weights = (1 / 3, 1 / 3, 1 / 3) if balance_individual_toms else (0.5, 0.3, 0.2)
+    shares = {"KD": groove_share, "SD": groove_share}
+    shares.update(
+        {
+            class_name: target_tom_share * weight
+            for class_name, weight in zip(TOM_CLASSES, tom_weights)
+        }
+    )
+    return shares
+
+
+def allocate_class_quotas(
+    event_count: int,
+    cumulative_counts: Counter[str],
+    target_shares: dict[str, float],
+) -> Counter[str]:
+    if event_count < len(CLASS_NAMES):
+        raise ValueError(f"event_count must be at least {len(CLASS_NAMES)} to include all classes.")
+
+    quotas = Counter({class_name: 1 for class_name in CLASS_NAMES})
+    future_total = sum(cumulative_counts.values()) + event_count
+    for _ in range(event_count - len(CLASS_NAMES)):
+        class_name = max(
+            CLASS_NAMES,
+            key=lambda name: (
+                target_shares[name] * future_total - cumulative_counts[name] - quotas[name],
+                -CLASS_NAMES.index(name),
+            ),
+        )
+        quotas[class_name] += 1
+    return quotas
+
+
+def event_step(event: HitEvent) -> int:
+    return int(round(event.beat / (BEATS_PER_PHRASE / GRID_STEPS)))
+
+
+def select_existing_events(
+    base_events: Iterable[HitEvent],
+    class_name: str,
+    count: int,
+) -> list[HitEvent]:
+    candidates = [event for event in base_events if event.sample_class == class_name]
+    if class_name in TOM_CLASSES:
+        candidates.sort(key=lambda event: (event.beat < 2.0, -event.beat, -event.gain))
+    else:
+        candidates.sort(
+            key=lambda event: (
+                event_step(event) not in (0, 4, 8, 12),
+                -event.gain,
+                event.beat,
+            )
+        )
+    return [make_event(class_name, event_step(event), gain=event.gain) for event in candidates[:count]]
+
+
+def choose_missing_step(
+    class_name: str,
+    selected: list[HitEvent],
+    rng: random.Random,
+    tom_boost: float,
+) -> int:
+    used_for_class = {
+        event_step(event)
+        for event in selected
+        if event.sample_class == class_name
+    }
+
+    if class_name == "KD":
+        candidates = list(KD_STEPS)
+    elif class_name == "SD":
+        candidates = list(SD_STEPS)
+    else:
+        candidates = list(TOM_STEPS[class_name])
+        overlap_steps = [
+            event_step(event)
+            for event in selected
+            if event.sample_class in ("KD", "SD")
+            and event_step(event) >= 8
+            and event_step(event) not in used_for_class
+        ]
+        overlap_probability = min(0.55, 0.18 * max(1.0, tom_boost))
+        if overlap_steps and rng.random() < overlap_probability:
+            return rng.choice(overlap_steps)
+
+    available = [step for step in candidates if step not in used_for_class]
+    if available:
+        return rng.choice(available[: min(4, len(available))])
+
+    fallback = [step for step in range(GRID_STEPS) if step not in used_for_class]
+    if not fallback:
+        raise RuntimeError(f"No free rhythmic step remains for {class_name}.")
+    return rng.choice(fallback)
+
+
+def event_gain(class_name: str, rng: random.Random) -> float:
+    if class_name == "KD":
+        return rng.uniform(0.68, 0.98)
+    if class_name == "SD":
+        return rng.uniform(0.55, 0.98)
+    return rng.uniform(0.62, 0.94)
+
+
+def build_balanced_phrase(
+    base_events: list[HitEvent],
+    quotas: Counter[str],
+    rng: random.Random,
+    profile: GenerationProfile,
+    tom_boost: float,
+) -> list[HitEvent]:
+    selected: list[HitEvent] = []
+    for class_name in CLASS_NAMES:
+        selected.extend(select_existing_events(base_events, class_name, quotas[class_name]))
+
+    for class_name in CLASS_NAMES:
+        missing = quotas[class_name] - sum(event.sample_class == class_name for event in selected)
+        for _ in range(missing):
+            step = choose_missing_step(class_name, selected, rng, tom_boost)
+            selected.append(make_event(class_name, step, event_gain(class_name, rng)))
+
+    selected.sort(key=lambda event: (event.beat, CLASS_NAMES.index(event.sample_class)))
+    return humanize_events(
+        selected,
+        rng,
+        timing_humanization=profile.timing_humanization,
+        dynamic_variation=profile.dynamic_variation,
+    )
+
+
+def boosted_profile(profile: GenerationProfile, tom_boost: float) -> GenerationProfile:
+    if tom_boost <= 0:
+        raise ValueError("tom_boost must be greater than zero.")
+    return replace(
+        profile,
+        fill_probability=min(1.0, profile.fill_probability * tom_boost),
+        tom_probability=min(1.0, profile.tom_probability * tom_boost),
+        overlap_probability=min(0.6, profile.overlap_probability * tom_boost),
+        min_events=max(TOMBOOST_MIN_EVENTS, profile.min_events),
+        max_events=max(12, profile.max_events),
+    )
+
+
+def normalize_profile_weights(profile_names: Sequence[str], weights: Sequence[float] | None) -> list[float]:
+    if weights is None:
+        return [1.0 / len(profile_names)] * len(profile_names)
+    if len(weights) != len(profile_names):
+        raise ValueError("--profile-weights must have the same length as --profiles.")
+    if any(weight < 0 for weight in weights):
+        raise ValueError("--profile-weights cannot contain negative values.")
+    total = sum(weights)
+    if total <= 0:
+        raise ValueError("--profile-weights must sum to a positive value.")
+    return [weight / total for weight in weights]
+
+
+def choose_weighted_profile(
+    rng: random.Random,
+    profiles: Sequence[GenerationProfile],
+    weights: Sequence[float],
+) -> GenerationProfile:
+    return rng.choices(list(profiles), weights=list(weights), k=1)[0]
+
+
+def write_payload_annotation(annotation_path: Path, payload: dict) -> int:
+    rows = extract_adtof_rows(payload, annotation_path)
+    annotation_path.parent.mkdir(parents=True, exist_ok=True)
+    write_annotation(annotation_path, rows)
+    return len(rows)
+
+
+def ensure_empty_output(output_root: Path) -> None:
+    existing_files = [
+        path
+        for split_name in SPLITS
+        for folder_name in ("AUDIO", "LABELS", "ANNOTATIONS")
+        for path in (output_root / split_name / folder_name).glob("*")
+        if path.is_file()
+    ]
+    if existing_files:
+        raise FileExistsError(
+            f"Output dataset already contains files: {output_root}. Choose a new --output-root."
+        )
+
+
+def write_event_counts(
+    output_root: Path,
+    counts_by_split: dict[str, Counter[str]],
+    target_shares: dict[str, float],
+) -> None:
+    rows = []
+    for split_name in SPLITS:
+        split_counts = counts_by_split[split_name]
+        split_total = sum(split_counts.values())
+        for class_name in CLASS_NAMES:
+            count = split_counts[class_name]
+            rows.append(
+                {
+                    "split": split_name,
+                    "class": class_name,
+                    "midi": CLASS_TO_MIDI[class_name],
+                    "event_count": count,
+                    "percentage": round(100 * count / split_total, 4) if split_total else 0.0,
+                }
+            )
+
+    csv_path = output_root / "dataset_event_counts.csv"
+    with csv_path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+    payload = {
+        "class_schema": "vibro_5_toms",
+        "class_names": list(CLASS_NAMES),
+        "labels": [CLASS_TO_MIDI[name] for name in CLASS_NAMES],
+        "target_shares": target_shares,
+        "counts": rows,
+    }
+    (output_root / "dataset_event_counts.json").write_text(
+        json.dumps(payload, indent=2),
+        encoding="utf-8",
+    )
+
+
+def generate_dataset_split(
+    split_name: str,
+    phrase_count: int,
+    output_root: Path,
+    samples_dir: Path,
+    profiles: Sequence[GenerationProfile],
+    profile_weights: Sequence[float],
+    bpm: float | None,
+    target_shares: dict[str, float],
+    tom_boost: float,
+    sample_rate: int,
+    wav_subtype: str,
+    peak_limit: float,
+    write_annotations: bool,
+    seed: int,
+) -> Counter[str]:
+    split_root = output_root / split_name
+    audio_dir = split_root / "AUDIO"
+    labels_dir = split_root / "LABELS"
+    annotations_dir = split_root / "ANNOTATIONS"
+    for directory in (audio_dir, labels_dir, annotations_dir):
+        directory.mkdir(parents=True, exist_ok=True)
+
+    rng = random.Random(seed)
+    cumulative_counts: Counter[str] = Counter()
+    progress_interval = max(1, phrase_count // 10)
+    for index in range(1, phrase_count + 1):
+        profile = choose_weighted_profile(rng, profiles, profile_weights)
+        event_count = rng.randint(profile.min_events, profile.max_events)
+        quotas = allocate_class_quotas(event_count, cumulative_counts, target_shares)
+        base_events = generate_random_phrase(profile, rng)
+        events = build_balanced_phrase(base_events, quotas, rng, profile, tom_boost)
+        phrase_bpm = bpm if bpm is not None else choose_profile_bpm(profile, rng)
+        phrase_seed = seed + index
+        rendered = render_phrase(
+            events,
+            bpm=phrase_bpm,
+            samples_dir=samples_dir,
+            sample_rate=sample_rate,
+            seed=phrase_seed,
+        )
+
+        phrase_id = f"{split_name.lower()}_{profile.name}_{index:06d}"
+        stem = f"{phrase_id}_{int(round(phrase_bpm))}bpm"
+        labels_path = labels_dir / f"{stem}.json"
+        payload = export_phrase(
+            rendered,
+            audio_dir / f"{stem}.wav",
+            labels_path,
+            phrase_id=phrase_id,
+            profile_name=profile.name,
+            generation_seed=phrase_seed,
+            wav_subtype=wav_subtype,
+            peak_limit=peak_limit,
+        )
+        if write_annotations:
+            write_payload_annotation(annotations_dir / f"{stem}.txt", payload)
+        cumulative_counts.update(event.sample_class for event in events)
+
+        if index % progress_interval == 0 or index == phrase_count:
+            print(f"{split_name}: {index}/{phrase_count} phrases")
+
+    return cumulative_counts
+
+
+def generate_split_dataset(args: argparse.Namespace) -> dict[str, Counter[str]]:
+    if args.target_sr != TARGET_SR:
+        raise ValueError(f"This dataset must be generated at {TARGET_SR} Hz, got {args.target_sr}.")
+    if args.wav_subtype != DEFAULT_WAV_SUBTYPE:
+        raise ValueError(f"This dataset must use WAV subtype {DEFAULT_WAV_SUBTYPE}.")
+    if any(count < 0 for count in (args.num_train, args.num_val, args.num_test)):
+        raise ValueError("Split sizes cannot be negative.")
+    if not any((args.num_train, args.num_val, args.num_test)):
+        raise ValueError("At least one split must contain phrases.")
+
+    output_root = args.output_root.resolve()
+    ensure_empty_output(output_root)
+    output_root.mkdir(parents=True, exist_ok=True)
+
+    profile_names = list(args.profiles or [args.profile])
+    unknown_profiles = [name for name in profile_names if name not in GENERATION_PROFILES]
+    if unknown_profiles:
+        raise ValueError(f"Unknown profiles: {', '.join(unknown_profiles)}")
+    profile_weights = normalize_profile_weights(profile_names, args.profile_weights)
+    profiles = [
+        boosted_profile(GENERATION_PROFILES[name], args.tom_boost)
+        for name in profile_names
+    ]
+    target_shares = build_target_shares(args.target_tom_share, args.balance_individual_toms)
+    split_sizes = {
+        "TRAIN": args.num_train,
+        "VAL": args.num_val,
+        "TEST": args.num_test,
+    }
+
+    metadata = {
+        "class_schema": "vibro_5_toms",
+        "class_names": list(CLASS_NAMES),
+        "labels": [CLASS_TO_MIDI[name] for name in CLASS_NAMES],
+        "split_sizes": split_sizes,
+        "profiles": profile_names,
+        "profile_weights": profile_weights,
+        "tom_boost": args.tom_boost,
+        "balance_individual_toms": args.balance_individual_toms,
+        "target_tom_share": args.target_tom_share,
+        "target_shares": target_shares,
+        "sample_rate": TARGET_SR,
+        "channels": 1,
+        "wav_subtype": DEFAULT_WAV_SUBTYPE,
+        "peak_limit": args.peak_limit,
+        "write_annotations": args.write_annotations,
+        "seed": args.seed,
+    }
+    (output_root / "dataset_config.json").write_text(
+        json.dumps(metadata, indent=2),
+        encoding="utf-8",
+    )
+
+    counts_by_split: dict[str, Counter[str]] = {}
+    for split_index, split_name in enumerate(SPLITS):
+        counts_by_split[split_name] = generate_dataset_split(
+            split_name=split_name,
+            phrase_count=split_sizes[split_name],
+            output_root=output_root,
+            samples_dir=args.samples_dir.resolve(),
+            profiles=profiles,
+            profile_weights=profile_weights,
+            bpm=args.bpm,
+            target_shares=target_shares,
+            tom_boost=args.tom_boost,
+            sample_rate=args.target_sr,
+            wav_subtype=args.wav_subtype,
+            peak_limit=args.peak_limit,
+            write_annotations=args.write_annotations,
+            seed=args.seed + split_index * 1_000_000,
+        )
+
+    write_event_counts(output_root, counts_by_split, target_shares)
+    print(f"Dataset written to: {output_root}")
+    return counts_by_split
+
+
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate procedural drum phrases.")
+    parser = argparse.ArgumentParser(description="Generate procedural ADTOF vibration drum datasets.")
     parser.add_argument("--bpm", type=float, default=None)
-    parser.add_argument("--count", type=int, default=DEFAULT_PHRASE_COUNT)
+    parser.add_argument("--count", type=int, default=None, help="Legacy alias for --num-train.")
     parser.add_argument("--profile", choices=sorted(GENERATION_PROFILES), default=STANDARD_ROCK.name)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument(
         "--output-root",
         type=Path,
         default=DEFAULT_OUTPUT_ROOT,
-        help="Output directory containing AUDIO and LABELS subdirectories.",
+        help="Output dataset root.",
     )
+    parser.add_argument("--num-train", type=int, default=None)
+    parser.add_argument("--num-val", type=int, default=0)
+    parser.add_argument("--num-test", type=int, default=0)
+    parser.add_argument("--profiles", nargs="+", choices=sorted(GENERATION_PROFILES), default=None)
+    parser.add_argument("--profile-weights", nargs="+", type=float, default=None)
+    parser.add_argument(
+        "--tom-boost",
+        type=float,
+        nargs="?",
+        const=DEFAULT_TOM_BOOST,
+        default=DEFAULT_TOM_BOOST,
+        help="Multiplier applied to fill, tom and natural-overlap probabilities.",
+    )
+    parser.add_argument("--target-tom-share", type=float, default=DEFAULT_TARGET_TOM_SHARE)
+    parser.add_argument(
+        "--balance-individual-toms",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+    )
+    parser.add_argument("--samples-dir", type=Path, default=SAMPLES_DIR)
     parser.add_argument("--target-sr", type=int, default=TARGET_SR)
     parser.add_argument("--wav-subtype", default=DEFAULT_WAV_SUBTYPE)
     parser.add_argument("--peak-limit", type=float, default=DEFAULT_PEAK_LIMIT)
-    return parser.parse_args()
+    parser.add_argument("--write-annotations", action="store_true")
+    args = parser.parse_args()
+    if args.num_train is None:
+        args.num_train = args.count if args.count is not None else DEFAULT_PHRASE_COUNT
+    return args
 
 
 def main() -> None:
     args = parse_args()
-    profile = GENERATION_PROFILES[args.profile]
-    generate_training_dataset(
-        phrase_count=args.count,
-        bpm=args.bpm,
-        profile=profile,
-        output_audio_dir=args.output_root / "AUDIO",
-        output_labels_dir=args.output_root / "LABELS",
-        sample_rate=args.target_sr,
-        wav_subtype=args.wav_subtype,
-        peak_limit=args.peak_limit,
-        seed=args.seed,
-    )
+    generate_split_dataset(args)
 
 
 if __name__ == "__main__":

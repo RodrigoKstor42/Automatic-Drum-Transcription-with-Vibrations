@@ -12,8 +12,13 @@ import collections.abc
 import datetime
 import json
 import os
+import sys
 import warnings
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 # Must be set before TensorFlow/Keras are imported by adtof.model.model.
 os.environ.setdefault("TF_USE_LEGACY_KERAS", "True")
@@ -37,8 +42,12 @@ from adtof import config
 from adtof.model.dataLoader import DataLoader
 from adtof.model.model import Model
 
-CLASS_NAMES = ["KD", "SD", "TT", "HH", "CY"]
-MIDI_TO_CLASS = {35: "KD", 38: "SD", 47: "TT", 42: "HH", 49: "CY"}
+CLASS_SCHEMA = "vibro_5_toms"
+CLASS_NAMES = list(config.VIBRO_LABELS_5TXT)
+LABELS = list(config.VIBRO_LABELS_5)
+MIDI_TO_CLASS = dict(zip(LABELS, CLASS_NAMES))
+LEGACY_CLASS_NAMES = ["KD", "SD", "TT", "HH", "CY"]
+CHECKPOINT_METADATA_FILENAME = "checkpoint_metadata.json"
 DEFAULT_THRESHOLDS = [0.03, 0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5]
 
 
@@ -198,6 +207,44 @@ def save_final_weights(keras_model, checkpoint_dir):
         return None
 
 
+def checkpoint_metadata():
+    return {
+        "class_schema": CLASS_SCHEMA,
+        "class_names": CLASS_NAMES,
+        "labels": LABELS,
+    }
+
+
+def save_checkpoint_metadata(checkpoint_dir):
+    metadata_path = checkpoint_dir / CHECKPOINT_METADATA_FILENAME
+    save_json(metadata_path, checkpoint_metadata())
+    return metadata_path
+
+
+def validate_checkpoint_schema(weights_path):
+    metadata_path = weights_path.parent / CHECKPOINT_METADATA_FILENAME
+    if not metadata_path.is_file():
+        raise ValueError(
+            f"Refusing to load checkpoint without {CHECKPOINT_METADATA_FILENAME}: "
+            f"{weights_path}. It may use the legacy classes {LEGACY_CLASS_NAMES}."
+        )
+
+    with metadata_path.open("r", encoding="utf-8") as file:
+        metadata = json.load(file)
+
+    expected = checkpoint_metadata()
+    actual = {
+        "class_schema": metadata.get("class_schema"),
+        "class_names": metadata.get("class_names"),
+        "labels": metadata.get("labels"),
+    }
+    if actual != expected:
+        raise ValueError(
+            f"Checkpoint class schema mismatch for {weights_path}: "
+            f"expected {expected}, got {actual}."
+        )
+
+
 def write_csv(path, rows, fieldnames):
     with path.open("w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -228,8 +275,13 @@ def count_dataset_events(dataset_root):
                     if class_name is not None:
                         counts[class_name] += 1
         rows.extend(
-            {"split": split, "class": class_name, "midi_pitch": midi_pitch, "event_count": counts[class_name]}
-            for midi_pitch, class_name in MIDI_TO_CLASS.items()
+            {
+                "split": split,
+                "class": class_name,
+                "midi_pitch": midi_pitch,
+                "event_count": counts[class_name],
+            }
+            for midi_pitch, class_name in zip(LABELS, CLASS_NAMES)
         )
     return rows
 
@@ -597,6 +649,9 @@ def main():
     generated_files = []
     execution_datetime = datetime.datetime.now().astimezone().isoformat()
     config_data = {
+        "class_schema": CLASS_SCHEMA,
+        "class_names": CLASS_NAMES,
+        "labels": LABELS,
         "dataset_root": str(dataset_root),
         "epochs": args.epochs,
         "steps_per_epoch": args.steps_per_epoch,
@@ -642,8 +697,8 @@ def main():
         "trainingSequence": args.training_sequence,
         "batchSize": args.batch_size,
         "context": args.context,
-        "labels": config.LABELS_5,
-        "sampleWeight": config.WEIGHTS_5,
+        "labels": config.VIBRO_LABELS_5,
+        "sampleWeight": config.VIBRO_WEIGHTS_5,
         "prefetch": None,
         "n_channels": 1,
         # The validated custom_split smoke batch is input 72 -> target 64, which
@@ -657,6 +712,12 @@ def main():
         fold=0,
         **common_kwargs,
     )
+    if model.weightLoadedFlag:
+        raise RuntimeError(
+            "Refusing to continue with automatically loaded pre-existing weights. "
+            f"The vibro schema is {CLASS_NAMES}; legacy checkpoints may use "
+            f"{LEGACY_CLASS_NAMES}."
+        )
 
     data_access = DataLoader.factoryMixedDatasets(
         folderPath=str(dataset_root),
@@ -677,6 +738,7 @@ def main():
     checkpoint_dir = run_dir / "checkpoints"
     if args.save_checkpoints:
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        generated_files.append(save_checkpoint_metadata(checkpoint_dir))
         callbacks = build_callbacks(tf.keras, checkpoint_dir, not args.no_val)
 
     history = model.model.fit(
@@ -724,6 +786,7 @@ def main():
             for model_label, weights_path in evaluation_targets:
                 try:
                     if weights_path is not None:
+                        validate_checkpoint_schema(weights_path)
                         model.model.load_weights(str(weights_path))
                     metrics, prediction_stats, onset_metrics, onset_error = evaluate_loaded_model(
                         model.model,

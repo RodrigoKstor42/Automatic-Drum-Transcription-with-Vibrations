@@ -398,7 +398,9 @@ class DataLoader(object):
         if cachePreprocessFolders is None:
             cachePreprocessFolders = os.path.join(datasetRoot, "PREPROCESS")
 
-        kwargs.setdefault("mappingDictionaries", [instrumentsMapping.MIDI_REDUCED_5])
+        kwargs.setdefault("labels", config.VIBRO_LABELS_5)
+        kwargs.setdefault("sampleWeight", config.VIBRO_WEIGHTS_5)
+        kwargs.setdefault("mappingDictionaries", [instrumentsMapping.MIDI_VIBRO_5])
         kwargs.setdefault("sep", "\t")
 
         dataset = cls(
@@ -460,6 +462,9 @@ class DataLoader(object):
         """
         # Load all the different datasets
         if scenario == "custom_split":
+            kwargs.setdefault("labels", config.VIBRO_LABELS_5)
+            kwargs.setdefault("sampleWeight", config.VIBRO_WEIGHTS_5)
+            kwargs.setdefault("mappingDictionaries", [instrumentsMapping.MIDI_VIBRO_5])
             datasets = {"custom_split": cls.getCustomSplit(folderPath, **kwargs)}
         else:
             datasets = cls.getAllDatasets(folderPath, testFold, scenario=scenario, **kwargs)

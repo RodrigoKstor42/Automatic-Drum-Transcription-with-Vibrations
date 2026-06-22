@@ -10,20 +10,26 @@ It does not train the model.
 import argparse
 import logging
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 
 import numpy as np
 
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 SPLITS = ("TRAIN", "VAL", "TEST")
-TARGET_CLASS_NAMES = ("KD", "SD", "TT", "HH", "CY")
+TARGET_CLASS_NAMES = ("KD", "SD", "T12", "T14", "T16")
+TARGET_LABELS = (35, 38, 47, 45, 43)
+IMBALANCE_WARNING_RATIO = 10.0
 
 
 def get_args():
-    repo_root = Path(__file__).resolve().parent
     parser = argparse.ArgumentParser(description="Smoke test custom_split dataset loading.")
-    parser.add_argument("--dataset-root", default=str(repo_root / "PHRASE_GENERATOR"), help="Root with TRAIN/VAL/TEST folders.")
+    parser.add_argument("--dataset-root", default=str(REPO_ROOT / "PHRASE_GENERATOR"), help="Root with TRAIN/VAL/TEST folders.")
     parser.add_argument("--tracks-per-split", type=int, default=1, help="Number of paired WAV/TXT files to copy per split.")
     parser.add_argument("--train-tracks", type=int, default=None, help="Number of paired WAV/TXT files to copy from TRAIN.")
     parser.add_argument("--val-tracks", type=int, default=None, help="Number of paired WAV/TXT files to copy from VAL.")
@@ -50,34 +56,163 @@ def get_tracks_by_split(args):
 
 
 def find_pairs(dataset_root, split_name):
-    audio_dir = dataset_root / split_name / "AUDIO"
-    annotation_dir = dataset_root / split_name / "ANNOTATIONS"
-    if not audio_dir.is_dir():
-        raise AssertionError(f"Missing audio directory: {audio_dir}")
-    if not annotation_dir.is_dir():
-        raise AssertionError(f"Missing annotation directory: {annotation_dir}")
+    split_root = dataset_root / split_name
+    if (split_root / "AUDIO").is_dir():
+        source_roots = [split_root]
+    elif (dataset_root / "AUDIO").is_dir():
+        source_roots = [dataset_root]
+    else:
+        source_roots = [
+            path
+            for path in sorted(dataset_root.iterdir())
+            if path.is_dir()
+            and (path / "AUDIO").is_dir()
+            and (path / "ANNOTATIONS").is_dir()
+        ]
 
-    audio_by_stem = {path.stem: path for path in sorted(audio_dir.iterdir()) if path.suffix.lower() == ".wav"}
-    annotation_by_stem = {path.stem: path for path in sorted(annotation_dir.iterdir()) if path.suffix.lower() == ".txt"}
+    if not source_roots:
+        raise AssertionError(
+            f"No AUDIO/ANNOTATIONS dataset folders found under: {dataset_root}"
+        )
 
-    missing_annotations = sorted(set(audio_by_stem) - set(annotation_by_stem))
-    missing_audio = sorted(set(annotation_by_stem) - set(audio_by_stem))
-    if missing_annotations:
-        logging.warning("%s WAV files without TXT: %s", split_name, missing_annotations[:10])
-    if missing_audio:
-        logging.warning("%s TXT files without WAV: %s", split_name, missing_audio[:10])
+    pairs = []
+    for source_root in source_roots:
+        audio_dir = source_root / "AUDIO"
+        annotation_dir = source_root / "ANNOTATIONS"
+        audio_by_stem = {
+            path.stem: path
+            for path in sorted(audio_dir.iterdir())
+            if path.suffix.lower() == ".wav"
+        }
+        annotation_by_stem = {
+            path.stem: path
+            for path in sorted(annotation_dir.iterdir())
+            if path.suffix.lower() == ".txt"
+        }
 
-    paired_stems = sorted(set(audio_by_stem) & set(annotation_by_stem))
-    return [(audio_by_stem[stem], annotation_by_stem[stem]) for stem in paired_stems]
+        missing_annotations = sorted(set(audio_by_stem) - set(annotation_by_stem))
+        missing_audio = sorted(set(annotation_by_stem) - set(audio_by_stem))
+        if missing_annotations:
+            logging.warning(
+                "%s/%s WAV files without TXT: %s",
+                split_name,
+                source_root.name,
+                missing_annotations[:10],
+            )
+        if missing_audio:
+            logging.warning(
+                "%s/%s TXT files without WAV: %s",
+                split_name,
+                source_root.name,
+                missing_audio[:10],
+            )
+
+        paired_stems = sorted(set(audio_by_stem) & set(annotation_by_stem))
+        pairs.extend(
+            (audio_by_stem[stem], annotation_by_stem[stem])
+            for stem in paired_stems
+        )
+    return pairs
+
+
+def read_annotation_pitches(annotation_path):
+    pitches = set()
+    with annotation_path.open("r", encoding="utf-8") as annotation_file:
+        for line in annotation_file:
+            fields = line.split()
+            if len(fields) < 2:
+                continue
+            try:
+                pitches.add(int(float(fields[1])))
+            except ValueError:
+                continue
+    return pitches
+
+
+def count_dataset_events(pairs_by_split):
+    counts = {pitch: 0 for pitch in TARGET_LABELS}
+    seen_annotations = set()
+    for pairs in pairs_by_split.values():
+        for _, annotation_path in pairs:
+            resolved_path = annotation_path.resolve()
+            if resolved_path in seen_annotations:
+                continue
+            seen_annotations.add(resolved_path)
+            with annotation_path.open("r", encoding="utf-8") as annotation_file:
+                for line in annotation_file:
+                    fields = line.split()
+                    if len(fields) < 2:
+                        continue
+                    try:
+                        pitch = int(float(fields[1]))
+                    except ValueError:
+                        continue
+                    if pitch in counts:
+                        counts[pitch] += 1
+    return counts
+
+
+def report_dataset_balance(event_counts):
+    print("dataset_annotation_event_counts:")
+    for class_name, pitch in zip(TARGET_CLASS_NAMES, TARGET_LABELS):
+        print(f"{class_name} midi={pitch} events={event_counts[pitch]}")
+
+    positive_counts = [count for count in event_counts.values() if count > 0]
+    if len(positive_counts) > 1:
+        imbalance_ratio = max(positive_counts) / min(positive_counts)
+        if imbalance_ratio >= IMBALANCE_WARNING_RATIO:
+            logging.warning(
+                "Dataset annotations are strongly imbalanced (max/min event "
+                "ratio %.2f). This does not fail the smoke test.",
+                imbalance_ratio,
+            )
+
+
+def select_pairs_for_coverage(pairs, requested_tracks, uncovered_pitches, used_stems):
+    available = [
+        (audio_path, annotation_path, read_annotation_pitches(annotation_path))
+        for audio_path, annotation_path in pairs
+        if audio_path.resolve() not in used_stems
+    ]
+    selected = []
+    while available and len(selected) < requested_tracks:
+        best_index = max(
+            range(len(available)),
+            key=lambda index: (
+                len(available[index][2] & uncovered_pitches),
+                len(available[index][2] & set(TARGET_LABELS)),
+                -index,
+            ),
+        )
+        audio_path, annotation_path, pitches = available.pop(best_index)
+        selected.append((audio_path, annotation_path))
+        used_stems.add(audio_path.resolve())
+        uncovered_pitches.difference_update(pitches)
+    return selected
 
 
 def copy_subset(dataset_root, subset_root, tracks_by_split):
+    pairs_by_split = {
+        split_name: find_pairs(dataset_root, split_name) for split_name in SPLITS
+    }
+    event_counts = count_dataset_events(pairs_by_split)
+    report_dataset_balance(event_counts)
+    available_target_pitches = {
+        pitch for pitch, count in event_counts.items() if count > 0
+    }
+    uncovered_pitches = set(available_target_pitches)
+    used_stems = set()
+
     for split_name in SPLITS:
         requested_tracks = tracks_by_split[split_name]
-        pairs = find_pairs(dataset_root, split_name)
-        if len(pairs) < requested_tracks:
+        pairs = pairs_by_split[split_name]
+        selected_pairs = select_pairs_for_coverage(
+            pairs, requested_tracks, uncovered_pitches, used_stems
+        )
+        if len(selected_pairs) < requested_tracks:
             raise AssertionError(
-                f"{split_name} requested {requested_tracks} paired WAV/TXT files, but only {len(pairs)} are available."
+                f"{split_name} requested {requested_tracks} unique paired WAV/TXT "
+                f"files, but only {len(selected_pairs)} are available."
             )
 
         audio_out = subset_root / split_name / "AUDIO"
@@ -85,10 +220,18 @@ def copy_subset(dataset_root, subset_root, tracks_by_split):
         audio_out.mkdir(parents=True, exist_ok=True)
         annotation_out.mkdir(parents=True, exist_ok=True)
 
-        for audio_path, annotation_path in pairs[:requested_tracks]:
+        for audio_path, annotation_path in selected_pairs:
             shutil.copy2(audio_path, audio_out / audio_path.name)
             shutil.copy2(annotation_path, annotation_out / annotation_path.name)
         logging.info("%s paired files copied: %s", split_name, requested_tracks)
+
+    if uncovered_pitches:
+        logging.warning(
+            "The temporary subset could not cover dataset pitches: %s. "
+            "Increase --tracks-per-split if needed.",
+            sorted(uncovered_pitches),
+        )
+    return available_target_pitches
 
 
 def assert_shape(name, actual, expected):
@@ -116,12 +259,26 @@ def print_target_summary(positive_counts, annotation_events, y_dense_shape):
     print(f"annotation events={annotation_events}")
     print(f"yDense shape={y_dense_shape}")
 
-    for class_name, count in zip(TARGET_CLASS_NAMES[3:], positive_counts[3:]):
-        if count > 0:
-            logging.warning("%s has %d positive target frames; expected zero for this custom dataset.", class_name, int(count))
+    positive_class_counts = positive_counts[positive_counts > 0]
+    if len(positive_class_counts) > 1:
+        imbalance_ratio = positive_class_counts.max() / positive_class_counts.min()
+        if imbalance_ratio >= IMBALANCE_WARNING_RATIO:
+            logging.warning(
+                "Dense targets are strongly imbalanced (max/min positive-frame "
+                "ratio %.2f). This does not fail the smoke test.",
+                imbalance_ratio,
+            )
 
 
-def validate_all_tracks(dataloader, split_indexes, expected_feature_dim, expected_target_classes, n_channels, track_cls):
+def validate_all_tracks(
+    dataloader,
+    split_indexes,
+    expected_feature_dim,
+    expected_target_classes,
+    n_channels,
+    track_cls,
+    expected_positive_pitches,
+):
     if dataloader.preprocessPaths is None:
         raise AssertionError("Expected preprocess cache paths to be configured.")
 
@@ -166,6 +323,12 @@ def validate_all_tracks(dataloader, split_indexes, expected_feature_dim, expecte
                     raise AssertionError("Track did not create sample weights.")
                 if track.yDense.shape[1] != expected_target_classes:
                     raise AssertionError(f"Unexpected target class count: {track.yDense.shape[1]}")
+                unexpected_sparse_pitches = set(track.y) - set(TARGET_LABELS)
+                if unexpected_sparse_pitches:
+                    raise AssertionError(
+                        "Track contains pitches outside the vibration vocabulary: "
+                        f"{sorted(unexpected_sparse_pitches)}"
+                    )
 
                 positive_counts = get_target_positive_counts(track.yDense)
                 total_positive_frames = int(positive_counts.sum())
@@ -196,6 +359,15 @@ def validate_all_tracks(dataloader, split_indexes, expected_feature_dim, expecte
     if int(accumulated_counts.sum()) == 0:
         raise AssertionError("All target classes are zero after building yDense for the copied subset.")
 
+    for class_index, (class_name, pitch) in enumerate(
+        zip(TARGET_CLASS_NAMES, TARGET_LABELS)
+    ):
+        if pitch in expected_positive_pitches and accumulated_counts[class_index] <= 0:
+            raise AssertionError(
+                f"{class_name} (MIDI {pitch}) exists in the dataset but has no "
+                "positive dense targets in the smoke subset."
+            )
+
     return checked_tracks
 
 
@@ -220,18 +392,28 @@ def run_smoke_test(args):
 
     try:
         tracks_by_split = get_tracks_by_split(args)
-        copy_subset(dataset_root, subset_root, tracks_by_split)
+        available_target_pitches = copy_subset(
+            dataset_root, subset_root, tracks_by_split
+        )
 
         cache_root = subset_root / "PREPROCESS"
-        labels = config.LABELS_5
-        sample_weight = config.WEIGHTS_5
+        labels = config.VIBRO_LABELS_5
+        if tuple(labels) != TARGET_LABELS:
+            raise AssertionError(
+                f"Unexpected vibration labels: {labels}; expected {list(TARGET_LABELS)}"
+            )
+        if tuple(config.VIBRO_LABELS_5TXT) != TARGET_CLASS_NAMES:
+            raise AssertionError(
+                "Unexpected vibration class names: "
+                f"{config.VIBRO_LABELS_5TXT}; expected {list(TARGET_CLASS_NAMES)}"
+            )
+        print(f"class_names={list(TARGET_CLASS_NAMES)}")
+        print(f"labels={labels}")
         common_kwargs = {
             "sampleRate": args.sample_rate,
             "trainingSequence": args.training_sequence,
             "batchSize": args.batch_size,
             "context": args.context,
-            "labels": labels,
-            "sampleWeight": sample_weight,
             "prefetch": None,
             "n_channels": 1,
         }
@@ -264,6 +446,7 @@ def run_smoke_test(args):
             len(labels),
             common_kwargs["n_channels"],
             Track,
+            available_target_pitches,
         )
 
         data_access = DataLoader.factoryMixedDatasets(
