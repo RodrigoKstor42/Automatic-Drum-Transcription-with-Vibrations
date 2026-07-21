@@ -1,0 +1,73 @@
+{
+  "class_schema": "vibro_5_toms",
+  "class_names": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "labels": [
+    35,
+    38,
+    47,
+    45,
+    43
+  ],
+  "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\PHRASE_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "epochs": 60,
+  "steps_per_epoch": 600,
+  "validation_steps": 150,
+  "batch_size": 1,
+  "model_name": "Frame_RNN",
+  "training_sequence": 64,
+  "context": 9,
+  "sample_rate": 100,
+  "class_weights_order": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "class_weights": [
+    1.0,
+    1.0,
+    1.2,
+    1.5,
+    1.7
+  ],
+  "same_padding": false,
+  "no_val": false,
+  "threshold": 0.5,
+  "thresholds": [
+    0.005,
+    0.0075,
+    0.01,
+    0.015,
+    0.02,
+    0.03,
+    0.04,
+    0.05,
+    0.075,
+    0.1,
+    0.125
+  ],
+  "eval_onsets": true,
+  "calibrate_thresholds_on_val": true,
+  "onset_tolerance_ms": 50.0,
+  "onset_thresholds": [
+    0.005,
+    0.0075,
+    0.01,
+    0.015,
+    0.02,
+    0.03,
+    0.04,
+    0.05,
+    0.075,
+    0.1,
+    0.125
+  ],
+  "execution_datetime": "2026-06-28T21:10:05.326114-04:00"
+}

@@ -1,0 +1,86 @@
+{
+  "note": "Full-track calibration uses TXT annotations as GT and selects only from VAL.",
+  "dataset_root_original_from_run_config": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_resolved": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_source": "config",
+  "dataset_root_migrated_candidate": null,
+  "dataset_root_display": "DATASET_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "val_ground_truth_check": {
+    "split": "VAL",
+    "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+    "counts_from_annotations": {
+      "KD": 4870,
+      "SD": 4870,
+      "T12": 1392,
+      "T14": 1392,
+      "T16": 1392
+    },
+    "n_annotation_tracks": 1200,
+    "n_prediction_tracks_by_checkpoint": {
+      "best": 1200,
+      "final": 1200
+    },
+    "missing_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "extra_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "status": "match"
+  },
+  "test_ground_truth_check": {
+    "split": "TEST",
+    "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+    "counts_from_annotations": {
+      "KD": 4891,
+      "SD": 4890,
+      "T12": 1397,
+      "T14": 1397,
+      "T16": 1397
+    },
+    "n_annotation_tracks": 1200,
+    "n_prediction_tracks_by_checkpoint": {
+      "best": 1200,
+      "final": 1200
+    },
+    "missing_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "extra_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "status": "match"
+  },
+  "previous_eval_artifacts": "not_available",
+  "previous_run_threshold_comparison": {
+    "previous_eval_artifacts": "not_available",
+    "message": "No previous eval_steps calibration artifacts were found. This is expected for runs trained with the new protocol.",
+    "fulltrack_test_with_new_global": {
+      "TP": 8820,
+      "FP": 16466,
+      "FN": 5152,
+      "micro_precision": 0.34880961797041843,
+      "micro_recall": 0.6312625250501002,
+      "micro_f1": 0.4493351673544245,
+      "micro_fbeta": 0.5053505632635792,
+      "macro_f1": 0.43202036388368575,
+      "macro_fbeta": 0.486180018221184
+    },
+    "fulltrack_test_with_new_per_class": {
+      "TP": 9150,
+      "FP": 16870,
+      "FN": 4822,
+      "micro_precision": 0.351652574942352,
+      "micro_recall": 0.6548811909533352,
+      "micro_f1": 0.4575915183036607,
+      "micro_fbeta": 0.5175609586299319,
+      "macro_f1": 0.4413066501605113,
+      "macro_fbeta": 0.5024928910158917
+    }
+  },
+  "test_not_used_for_selection": true
+}

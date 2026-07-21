@@ -1,0 +1,166 @@
+{
+  "official_baseline_name": "serious_5class_low_60ep_weighted_t14t16",
+  "status": "current_official_baseline",
+  "updated_at": "2026-06-29",
+  "selection_reason": "Selected over serious_5class_low_60ep_calibrated because it improves TEST full-track onset micro-F1 and macro-F1, with large gains on T14 and T16.",
+  "previous_official_baseline": {
+    "run_dir": "RUNS/serious_5class_low_60ep_calibrated",
+    "checkpoint": "best",
+    "threshold_global": 0.02,
+    "onset_nms_ms": 125.0,
+    "test_micro_f1": 0.571598211791003
+  },
+  "run_dir": "RUNS/serious_5class_low_60ep_weighted_t14t16",
+  "checkpoint": {
+    "selected_checkpoint": "best",
+    "checkpoint_path": "RUNS/serious_5class_low_60ep_weighted_t14t16/checkpoints/best_weights.weights.h5"
+  },
+  "inference": {
+    "threshold_mode": "global",
+    "threshold_global": 0.03,
+    "thresholds_per_class": null,
+    "onset_nms_ms": 110.0,
+    "min_peak_distance_ms": 110.0,
+    "onset_tolerance_ms": 50.0,
+    "recommended_for_inference": true
+  },
+  "class_schema": {
+    "name": "vibro_5_toms",
+    "class_names": [
+      "KD",
+      "SD",
+      "T12",
+      "T14",
+      "T16"
+    ],
+    "midi_labels": [
+      35,
+      38,
+      47,
+      45,
+      43
+    ],
+    "mapping": {
+      "KD": 35,
+      "SD": 38,
+      "T12": 47,
+      "T14": 45,
+      "T16": 43
+    },
+    "legacy_schema_not_used": [
+      "KD",
+      "SD",
+      "TT",
+      "HH",
+      "CY"
+    ]
+  },
+  "protocol": {
+    "metric": "onset-F1",
+    "selection_split": "VAL",
+    "final_report_split": "TEST",
+    "test_not_used_for_selection": true,
+    "evaluation_scope": "full-track",
+    "selection_metric": "f1"
+  },
+  "test_fulltrack_metrics": {
+    "TP": 8657,
+    "FP": 6901,
+    "FN": 5315,
+    "micro_precision": 0.5564339889445944,
+    "micro_recall": 0.6195963355281993,
+    "micro_f1": 0.5863189976295292,
+    "micro_fbeta": 0.598686030428769,
+    "macro_f1": 0.5854869775873086,
+    "macro_fbeta": 0.5923404859857292
+  },
+  "test_fulltrack_by_class": [
+    {
+      "class": "KD",
+      "midi_pitch": 35,
+      "TP": 3640,
+      "FP": 3698,
+      "FN": 1251,
+      "precision": 0.4960479694739711,
+      "recall": 0.7442240850541811,
+      "f1": 0.5953062392673154
+    },
+    {
+      "class": "SD",
+      "midi_pitch": 38,
+      "TP": 2533,
+      "FP": 1413,
+      "FN": 2357,
+      "precision": 0.6419158641662442,
+      "recall": 0.5179959100204499,
+      "f1": 0.5733363512901766
+    },
+    {
+      "class": "T12",
+      "midi_pitch": 47,
+      "TP": 820,
+      "FP": 604,
+      "FN": 577,
+      "precision": 0.5758426966292135,
+      "recall": 0.5869720830350752,
+      "f1": 0.5813541297412266
+    },
+    {
+      "class": "T14",
+      "midi_pitch": 45,
+      "TP": 750,
+      "FP": 618,
+      "FN": 647,
+      "precision": 0.5482456140350878,
+      "recall": 0.5368647100930566,
+      "f1": 0.54249547920434
+    },
+    {
+      "class": "T16",
+      "midi_pitch": 43,
+      "TP": 914,
+      "FP": 568,
+      "FN": 483,
+      "precision": 0.6167341430499326,
+      "recall": 0.6542591267000716,
+      "f1": 0.6349426884334839
+    }
+  ],
+  "comparison_against_previous_baseline": {
+    "micro_f1": {
+      "previous": 0.5716,
+      "current": 0.5863,
+      "delta": 0.0147
+    },
+    "micro_recall": {
+      "previous": 0.5857,
+      "current": 0.6196,
+      "delta": 0.0339
+    },
+    "macro_f1": {
+      "previous": 0.5365,
+      "current": 0.5855,
+      "delta": 0.049
+    },
+    "T14_f1": {
+      "previous": 0.496,
+      "current": 0.5425,
+      "delta": 0.0465
+    },
+    "T16_f1": {
+      "previous": 0.4317,
+      "current": 0.6349,
+      "delta": 0.2032
+    },
+    "SD_f1": {
+      "previous": 0.5917,
+      "current": 0.5733,
+      "delta": -0.0184
+    }
+  },
+  "source_files": {
+    "fulltrack_selected_inference_config": "RUNS/serious_5class_low_60ep_weighted_t14t16/fulltrack_calibration_f1_nms/fulltrack_selected_inference_config.json",
+    "comparison_summary": "RUNS/COMPARISONS/weighted_t14t16_vs_baseline/comparison_summary.json",
+    "comparison_report_pdf": "RUNS/COMPARISONS/weighted_t14t16_vs_baseline/weighted_t14t16_vs_baseline_report.pdf"
+  }
+}

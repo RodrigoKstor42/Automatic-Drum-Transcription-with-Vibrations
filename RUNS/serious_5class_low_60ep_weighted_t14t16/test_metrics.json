@@ -1,0 +1,5 @@
+{
+  "eval_steps": 1200,
+  "threshold": 0.5,
+  "classes": []
+}

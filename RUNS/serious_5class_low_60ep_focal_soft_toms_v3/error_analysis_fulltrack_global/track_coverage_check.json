@@ -1,0 +1,15 @@
+{
+  "split": "TEST",
+  "n_annotation_tracks": 1200,
+  "n_unique_tracks_used_by_analyzer": 1200,
+  "n_total_track_iterations_by_analyzer": 1200,
+  "n_total_track_iterations_by_analyzer_by_mode": {
+    "global": 1200
+  },
+  "duplicated_track_ids": [],
+  "missing_track_ids": [],
+  "extra_track_ids": [],
+  "tracks_with_gt_mismatch": [],
+  "status": "match",
+  "max_tracks": null
+}

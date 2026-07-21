@@ -1,0 +1,48 @@
+{
+  "split": "TEST",
+  "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "counts_from_annotations": {
+    "KD": 4891,
+    "SD": 4890,
+    "T12": 1397,
+    "T14": 1397,
+    "T16": 1397
+  },
+  "counts_from_dataset_event_counts_csv": {
+    "KD": 4891,
+    "SD": 4890,
+    "T12": 1397,
+    "T14": 1397,
+    "T16": 1397
+  },
+  "counts_used_by_analyzer_by_mode": {
+    "global": {
+      "KD": 4891,
+      "SD": 4890,
+      "T12": 1397,
+      "T14": 1397,
+      "T16": 1397
+    }
+  },
+  "delta_annotations_vs_csv": {
+    "KD": 0,
+    "SD": 0,
+    "T12": 0,
+    "T14": 0,
+    "T16": 0
+  },
+  "delta_analyzer_vs_annotations_by_mode": {
+    "global": {
+      "KD": 0,
+      "SD": 0,
+      "T12": 0,
+      "T14": 0,
+      "T16": 0
+    }
+  },
+  "analyzer_mode_matches_annotations": {
+    "global": true
+  },
+  "status": "match",
+  "max_tracks": null
+}

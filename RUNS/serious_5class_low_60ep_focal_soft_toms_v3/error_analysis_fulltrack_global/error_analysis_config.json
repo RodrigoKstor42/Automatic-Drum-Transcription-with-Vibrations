@@ -1,0 +1,53 @@
+{
+  "run_dir": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\RUNS\\serious_5class_low_60ep_focal_soft_toms_v3",
+  "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_original_from_run_config": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_resolved": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_source": "cli_override",
+  "dataset_root_migrated_candidate": null,
+  "dataset_root_display": "DATASET_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "split": "TEST",
+  "inference_config_path": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\RUNS\\serious_5class_low_60ep_focal_soft_toms_v3\\fulltrack_calibration\\fulltrack_selected_inference_config.json",
+  "threshold_source": "fulltrack_inference_config",
+  "selected_thresholds_from_val_path": null,
+  "checkpoint_selection_from_val_path": null,
+  "test_not_used_for_selection": true,
+  "threshold_mode": "global",
+  "threshold_modes_evaluated": [
+    "global"
+  ],
+  "max_tracks": null,
+  "class_schema": "vibro_5_toms",
+  "class_names": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "labels": [
+    35,
+    38,
+    47,
+    45,
+    43
+  ],
+  "selected_checkpoint": "final",
+  "checkpoint_path": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\RUNS\\serious_5class_low_60ep_focal_soft_toms_v3\\checkpoints\\final_weights.weights.h5",
+  "checkpoint_metadata_path": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\RUNS\\serious_5class_low_60ep_focal_soft_toms_v3\\checkpoints\\checkpoint_metadata.json",
+  "selected_global_threshold": 0.04,
+  "selected_per_class_thresholds": {
+    "KD": 0.04,
+    "SD": 0.04,
+    "T12": 0.04,
+    "T14": 0.04,
+    "T16": 0.04
+  },
+  "onset_tolerance_ms": 50.0,
+  "onset_tolerance_frames": 5,
+  "onset_nms_ms": 150.0,
+  "nms_ms": 150.0,
+  "sample_rate": 100,
+  "n_tracks_available": 1200,
+  "n_tracks_analyzed": 1200
+}

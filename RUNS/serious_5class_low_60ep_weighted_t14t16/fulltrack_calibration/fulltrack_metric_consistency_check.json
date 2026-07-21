@@ -1,0 +1,116 @@
+{
+  "note": "Full-track calibration uses TXT annotations as GT and selects only from VAL.",
+  "dataset_root_original_from_run_config": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\PHRASE_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_resolved": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "dataset_root_source": "cli_override",
+  "dataset_root_migrated_candidate": null,
+  "dataset_root_display": "DATASET_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+  "val_ground_truth_check": {
+    "split": "VAL",
+    "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+    "counts_from_annotations": {
+      "KD": 4870,
+      "SD": 4870,
+      "T12": 1392,
+      "T14": 1392,
+      "T16": 1392
+    },
+    "n_annotation_tracks": 1200,
+    "n_prediction_tracks_by_checkpoint": {
+      "best": 1200,
+      "final": 1200
+    },
+    "missing_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "extra_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "status": "match"
+  },
+  "test_ground_truth_check": {
+    "split": "TEST",
+    "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\DATASET_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+    "counts_from_annotations": {
+      "KD": 4891,
+      "SD": 4890,
+      "T12": 1397,
+      "T14": 1397,
+      "T16": 1397
+    },
+    "n_annotation_tracks": 1200,
+    "n_prediction_tracks_by_checkpoint": {
+      "best": 1200,
+      "final": 1200
+    },
+    "missing_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "extra_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "status": "match"
+  },
+  "previous_eval_artifacts": "checkpoint_selection_from_val, selected_thresholds_from_val, test_onset_metrics_by_threshold, val_onset_metrics_by_threshold",
+  "previous_run_threshold_comparison": {
+    "previous_eval_artifacts": "checkpoint_selection_from_val, selected_thresholds_from_val, test_onset_metrics_by_threshold, val_onset_metrics_by_threshold",
+    "previous_checkpoint": "best",
+    "previous_global_threshold": 0.125,
+    "previous_per_class_thresholds": {
+      "KD": 0.125,
+      "SD": 0.125,
+      "T12": 0.125,
+      "T14": 0.125,
+      "T16": 0.125
+    },
+    "fulltrack_test_with_previous_global": {
+      "TP": 4630,
+      "FP": 6287,
+      "FN": 9342,
+      "micro_precision": 0.424109187505725,
+      "micro_recall": 0.33137703979387345,
+      "micro_f1": 0.3720519104825425,
+      "micro_fbeta": 0.35527931246163286,
+      "macro_f1": 0.34542683653812806,
+      "macro_fbeta": 0.339445314031217
+    },
+    "fulltrack_test_with_previous_per_class": {
+      "TP": 4630,
+      "FP": 6287,
+      "FN": 9342,
+      "micro_precision": 0.424109187505725,
+      "micro_recall": 0.33137703979387345,
+      "micro_f1": 0.3720519104825425,
+      "micro_fbeta": 0.35527931246163286,
+      "macro_f1": 0.34542683653812806,
+      "macro_fbeta": 0.339445314031217
+    },
+    "fulltrack_test_with_new_global": {
+      "TP": 9437,
+      "FP": 16970,
+      "FN": 4535,
+      "micro_precision": 0.3573673647139016,
+      "micro_recall": 0.6754222731176639,
+      "micro_f1": 0.46742118427895685,
+      "micro_fbeta": 0.5302235322591798,
+      "macro_f1": 0.4623525399802567,
+      "macro_fbeta": 0.5229811846579384
+    },
+    "fulltrack_test_with_new_per_class": {
+      "TP": 9577,
+      "FP": 16324,
+      "FN": 4395,
+      "micro_precision": 0.3697540635496699,
+      "micro_recall": 0.6854423131978242,
+      "micro_f1": 0.4803751912321621,
+      "micro_fbeta": 0.5428380829467369,
+      "macro_f1": 0.4712720821901413,
+      "macro_fbeta": 0.5315041093983754
+    }
+  },
+  "test_not_used_for_selection": true
+}

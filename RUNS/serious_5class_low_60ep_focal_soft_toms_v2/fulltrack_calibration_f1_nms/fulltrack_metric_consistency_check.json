@@ -1,0 +1,81 @@
+{
+  "note": "Full-track calibration uses TXT annotations as GT and selects only from VAL.",
+  "val_ground_truth_check": {
+    "split": "VAL",
+    "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\PHRASE_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+    "counts_from_annotations": {
+      "KD": 4870,
+      "SD": 4870,
+      "T12": 1392,
+      "T14": 1392,
+      "T16": 1392
+    },
+    "n_annotation_tracks": 1200,
+    "n_prediction_tracks_by_checkpoint": {
+      "best": 1200,
+      "final": 1200
+    },
+    "missing_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "extra_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "status": "match"
+  },
+  "test_ground_truth_check": {
+    "split": "TEST",
+    "dataset_root": "C:\\Users\\rsanc\\Documents\\MAGISTER EN ACUSTICA Y VIBRACIONES\\SEMESTRE IV\\Automatic-Drum-Transcription-with-Vibrations\\PHRASE_GENERATOR\\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL",
+    "counts_from_annotations": {
+      "KD": 4891,
+      "SD": 4890,
+      "T12": 1397,
+      "T14": 1397,
+      "T16": 1397
+    },
+    "n_annotation_tracks": 1200,
+    "n_prediction_tracks_by_checkpoint": {
+      "best": 1200,
+      "final": 1200
+    },
+    "missing_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "extra_prediction_tracks_by_checkpoint": {
+      "best": [],
+      "final": []
+    },
+    "status": "match"
+  },
+  "previous_eval_artifacts": "not_available",
+  "previous_run_threshold_comparison": {
+    "previous_eval_artifacts": "not_available",
+    "message": "No previous eval_steps calibration artifacts were found. This is expected for runs trained with the new protocol.",
+    "fulltrack_test_with_new_global": {
+      "TP": 10535,
+      "FP": 20438,
+      "FN": 3437,
+      "micro_precision": 0.3401349562522197,
+      "micro_recall": 0.7540080160320641,
+      "micro_f1": 0.46879519412615417,
+      "micro_fbeta": 0.5486099983976928,
+      "macro_f1": 0.45757977978326136,
+      "macro_fbeta": 0.5161261043766925
+    },
+    "fulltrack_test_with_new_per_class": {
+      "TP": 8179,
+      "FP": 11682,
+      "FN": 5793,
+      "micro_precision": 0.41181209405367303,
+      "micro_recall": 0.5853850558259376,
+      "micro_f1": 0.48349244820146015,
+      "micro_fbeta": 0.5181829700963,
+      "macro_f1": 0.47780248653095186,
+      "macro_fbeta": 0.520926563089199
+    }
+  },
+  "test_not_used_for_selection": true
+}

@@ -1,0 +1,52 @@
+{
+  "class_schema": "vibro_5_toms",
+  "class_names": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "labels": [
+    35,
+    38,
+    47,
+    45,
+    43
+  ],
+  "split_sizes": {
+    "TRAIN": 9600,
+    "VAL": 1200,
+    "TEST": 1200
+  },
+  "profiles": [
+    "basic_groove",
+    "standard_rock",
+    "fill_heavy",
+    "fast_dense",
+    "humanized_mixed"
+  ],
+  "profile_weights": [
+    0.3,
+    0.3,
+    0.15,
+    0.1,
+    0.15
+  ],
+  "tom_boost": 1.3,
+  "balance_individual_toms": true,
+  "target_tom_share": 0.3,
+  "target_shares": {
+    "KD": 0.35,
+    "SD": 0.35,
+    "T12": 0.09999999999999999,
+    "T14": 0.09999999999999999,
+    "T16": 0.09999999999999999
+  },
+  "sample_rate": 12000,
+  "channels": 1,
+  "wav_subtype": "PCM_16",
+  "peak_limit": 0.9,
+  "write_annotations": true,
+  "seed": 43
+}

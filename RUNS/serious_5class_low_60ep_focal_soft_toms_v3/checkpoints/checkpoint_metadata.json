@@ -1,0 +1,34 @@
+{
+  "class_schema": "vibro_5_toms",
+  "class_names": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "labels": [
+    35,
+    38,
+    47,
+    45,
+    43
+  ],
+  "class_weights_order": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "class_weights": [
+    1.0,
+    1.0,
+    1.2,
+    1.4,
+    1.6
+  ],
+  "loss_type": "focal",
+  "focal_gamma": 1.0,
+  "focal_alpha": 0.25
+}

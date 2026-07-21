@@ -1,0 +1,131 @@
+{
+  "class_schema": "vibro_5_toms",
+  "class_names": [
+    "KD",
+    "SD",
+    "T12",
+    "T14",
+    "T16"
+  ],
+  "labels": [
+    35,
+    38,
+    47,
+    45,
+    43
+  ],
+  "target_shares": {
+    "KD": 0.35,
+    "SD": 0.35,
+    "T12": 0.09999999999999999,
+    "T14": 0.09999999999999999,
+    "T16": 0.09999999999999999
+  },
+  "counts": [
+    {
+      "split": "TRAIN",
+      "class": "KD",
+      "midi": 35,
+      "event_count": 39008,
+      "percentage": 35.0004
+    },
+    {
+      "split": "TRAIN",
+      "class": "SD",
+      "midi": 38,
+      "event_count": 39007,
+      "percentage": 34.9996
+    },
+    {
+      "split": "TRAIN",
+      "class": "T12",
+      "midi": 47,
+      "event_count": 11145,
+      "percentage": 10.0
+    },
+    {
+      "split": "TRAIN",
+      "class": "T14",
+      "midi": 45,
+      "event_count": 11145,
+      "percentage": 10.0
+    },
+    {
+      "split": "TRAIN",
+      "class": "T16",
+      "midi": 43,
+      "event_count": 11145,
+      "percentage": 10.0
+    },
+    {
+      "split": "VAL",
+      "class": "KD",
+      "midi": 35,
+      "event_count": 4870,
+      "percentage": 34.9957
+    },
+    {
+      "split": "VAL",
+      "class": "SD",
+      "midi": 38,
+      "event_count": 4870,
+      "percentage": 34.9957
+    },
+    {
+      "split": "VAL",
+      "class": "T12",
+      "midi": 47,
+      "event_count": 1392,
+      "percentage": 10.0029
+    },
+    {
+      "split": "VAL",
+      "class": "T14",
+      "midi": 45,
+      "event_count": 1392,
+      "percentage": 10.0029
+    },
+    {
+      "split": "VAL",
+      "class": "T16",
+      "midi": 43,
+      "event_count": 1392,
+      "percentage": 10.0029
+    },
+    {
+      "split": "TEST",
+      "class": "KD",
+      "midi": 35,
+      "event_count": 4891,
+      "percentage": 35.0057
+    },
+    {
+      "split": "TEST",
+      "class": "SD",
+      "midi": 38,
+      "event_count": 4890,
+      "percentage": 34.9986
+    },
+    {
+      "split": "TEST",
+      "class": "T12",
+      "midi": 47,
+      "event_count": 1397,
+      "percentage": 9.9986
+    },
+    {
+      "split": "TEST",
+      "class": "T14",
+      "midi": 45,
+      "event_count": 1397,
+      "percentage": 9.9986
+    },
+    {
+      "split": "TEST",
+      "class": "T16",
+      "midi": 43,
+      "event_count": 1397,
+      "percentage": 9.9986
+    }
+  ]
+}
