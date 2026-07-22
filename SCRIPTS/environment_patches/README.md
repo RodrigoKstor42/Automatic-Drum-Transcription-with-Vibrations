@@ -1,7 +1,7 @@
-# Environment patches
+# Parches de entorno
 
-This folder contains scripts that modify the local Python environment.
+Esta carpeta contiene scripts que modifican el entorno local de Python.
 
-`fixmadmom.py` patches files from `madmom` inside `site-packages` for local compatibility. It is not part of the normal dataset, training, calibration, or evaluation pipeline.
+`fixmadmom.py` aplica un parche sobre archivos de `madmom` dentro de `site-packages` para resolver compatibilidad local. No forma parte del pipeline normal de dataset, entrenamiento, calibracion ni evaluacion.
 
-Do not run these scripts unless there is an explicit environment problem to solve and you understand that they modify files outside this repository.
+No ejecutar estos scripts salvo que exista un problema claro de entorno y se entienda que modifican archivos fuera del repositorio.

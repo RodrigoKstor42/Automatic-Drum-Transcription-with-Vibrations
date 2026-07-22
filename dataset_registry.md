@@ -2,6 +2,8 @@
 
 Fecha de corte: 2026-06-21.
 
+Nota editorial 2026-07: este registro conserva trazabilidad historica. Las rutas `PHRASE_GENERATOR/...` pertenecen a etapas anteriores del proyecto; el generador vigente esta en `DATASET_GENERATOR` y el dataset principal actual es `DATASET_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL`.
+
 ## Estructura esperada
 
 Los datasets entrenables usan esta estructura:
@@ -47,7 +49,7 @@ Carpetas relacionadas:
 
 Objetivo:
 
-Crear las primeras frases procedurales sin distorsion fuerte, con golpes ordenados musicalmente y exportacion WAV/JSON. Esta etapa corrigio los problemas iniciales: distorsion, clipping, golpes superpuestos de forma poco natural y truncamiento de colas.
+Crear las primeras frases procedurales sin distorsion fuerte, con golpes ordenados musicalmente y exportacion WAV/JSON. Esta etapa sirvio para corregir problemas iniciales de distorsion, clipping, golpes superpuestos de forma poco natural y truncamiento de colas.
 
 Comando base para generar frases por perfil:
 
@@ -223,9 +225,9 @@ Carpeta:
 
 `PHRASE_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL`
 
-Estado:
+Estado en este corte:
 
-Dataset principal actual para entrenamiento.
+Dataset principal de entrenamiento al 2026-06-21. En la organizacion vigente, el dataset principal se documenta bajo `DATASET_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL`.
 
 Configuracion registrada:
 

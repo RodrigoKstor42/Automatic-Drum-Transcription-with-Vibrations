@@ -197,6 +197,8 @@ Mapeo vigente:
 
 ## 8. Validacion recomendada despues de generar
 
+Nota: los comandos actualizados despues de la reorganizacion de `SCRIPTS` estan en `SCRIPTS/COMMANDS_UPDATED.md`. Los comandos siguientes se conservan como referencia de compatibilidad.
+
 ```powershell
 conda run -n adtof_rod python .\SCRIPTS\check_wav_dataset_format.py `
   --dataset-root .\DATASET_GENERATOR\CUSTOM_5CLASS_SMOKE_TEST `
@@ -313,7 +315,7 @@ Solucion:
 
 ## 12. Siguiente paso despues de generar dataset
 
-Despues de validar el dataset, el entrenamiento se realiza desde `SCRIPTS/mini_train_custom_split.py`. Ejemplo corto:
+Despues de validar el dataset, el entrenamiento vigente se realiza desde `SCRIPTS/training/train_custom_split.py`. El ejemplo siguiente conserva el wrapper historico `SCRIPTS/mini_train_custom_split.py` por compatibilidad:
 
 ```powershell
 conda run -n adtof_rod python .\SCRIPTS\mini_train_custom_split.py `

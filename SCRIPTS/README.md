@@ -6,6 +6,8 @@ Esta carpeta contiene scripts para diagnóstico de dataset, smoke tests, entrena
 
 ## Scripts vigentes
 
+La organizacion vigente agrupa los scripts en subcarpetas: `dataset_checks/`, `smoke_tests/`, `training/`, `calibration/`, `analysis/` y `environment_patches/`. Los nombres historicos en la raiz de `SCRIPTS/` pueden seguir existiendo como wrappers de compatibilidad, pero para reproducir el proyecto conviene usar los comandos de `SCRIPTS/COMMANDS_UPDATED.md`.
+
 | Script | Categoría | Uso | Riesgo/nota |
 |---|---|---|---|
 | `check_wav_dataset_format.py` | diagnóstico de dataset | Valida formato técnico de WAV, sample rate, canales, subtipo y clipping. | Lectura de dataset; puede tardar en datasets grandes. |
@@ -32,7 +34,9 @@ Esta carpeta contiene scripts para diagnóstico de dataset, smoke tests, entrena
 9. Analizar errores.
 10. Comparar runs.
 
-Comandos PowerShell copiables:
+Comandos PowerShell de referencia:
+
+Nota: esta seccion conserva comandos historicos de compatibilidad. Para ejecucion diaria y reproduccion final, usar `SCRIPTS/COMMANDS_UPDATED.md`, que ya apunta a las subcarpetas vigentes.
 
 ```powershell
 $datasetRoot = ".\DATASET_GENERATOR\CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL"

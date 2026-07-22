@@ -2,6 +2,8 @@
 
 Fecha de corte: 2026-06-21.
 
+Nota editorial 2026-07: este archivo conserva el estado historico del proyecto al 2026-06-21. El pipeline vigente esta reorganizado en `DATASET_GENERATOR` y `SCRIPTS/`; para ejecutar comandos actuales, revisar `SCRIPTS/COMMANDS_UPDATED.md`.
+
 ## Contexto
 
 Este repositorio parte de la replicacion local del metodo ADTOF de M. Zehren para transcripcion automatica de bateria. El objetivo general es usar esa base para avanzar hacia transcripcion de bateria a partir de senales vibratorias captadas con triggers piezoelectricos instalados en las membranas de los cuerpos de la bateria.
@@ -27,9 +29,9 @@ Construir un pipeline reproducible para:
 5. Entrenar el modelo ADTOF con el esquema vibratorio de 5 clases.
 6. Evaluar metricas frame-wise y onset-based para identificar limitaciones del dataset/modelo.
 
-## Avance principal
+## Avance principal hasta esta fecha
 
-Se implemento un generador procedural en `PHRASE_GENERATOR/SRC/phrase_generator.py`. El generador evoluciono desde una frase basica KD+SD+KD+SD hacia una generacion masiva por perfiles musicales. Durante el proceso se corrigieron problemas iniciales de distorsion, clipping, golpes desordenados, solapamientos excesivos y truncamiento de colas.
+Se implemento un generador procedural, que despues fue reorganizado dentro de `DATASET_GENERATOR`. El generador evoluciono desde una frase basica KD+SD+KD+SD hacia una generacion masiva por perfiles musicales. Durante el proceso se corrigieron problemas iniciales de distorsion, clipping, golpes desordenados, solapamientos excesivos y truncamiento de colas.
 
 Los perfiles actuales estan definidos en `PHRASE_GENERATOR/SRC/generation_profiles.py`:
 
@@ -41,13 +43,15 @@ Los perfiles actuales estan definidos en `PHRASE_GENERATOR/SRC/generation_profil
 
 Cada perfil controla rango de BPM, minimo/maximo de eventos, probabilidad de fills, probabilidad de toms, densidad ritmica, solapamientos naturales, humanizacion temporal y variacion dinamica.
 
-## Estado del pipeline de datos
+## Estado del pipeline de datos hasta esta fecha
 
-La generacion actual usa un pipeline unificado. `PHRASE_GENERATOR/generate_tomboost_dataset.py` se mantiene como wrapper de compatibilidad, pero la logica vive en `PHRASE_GENERATOR/SRC/phrase_generator.py`.
+En este corte, la generacion usaba un pipeline unificado bajo `PHRASE_GENERATOR`. En la version vigente para merge, el generador principal esta en `DATASET_GENERATOR`.
 
-El dataset final mas importante hasta este corte es:
+El dataset final mas importante hasta este corte era:
 
 `PHRASE_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL`
+
+En la organizacion vigente, el dataset principal equivalente se documenta como `DATASET_GENERATOR/CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL`.
 
 Caracteristicas:
 
@@ -65,9 +69,9 @@ Conteo observado en `dataset_event_counts.csv`:
 - VAL: KD 4870, SD 4870, T12 1392, T14 1392, T16 1392.
 - TEST: KD 4891, SD 4890, T12 1397, T14 1397, T16 1397.
 
-## Estado del entrenamiento
+## Estado del entrenamiento hasta esta fecha
 
-El script principal de entrenamiento controlado es `SCRIPTS/mini_train_custom_split.py`. Aunque se llama `mini_train`, ya permite corridas de 10 epochs, checkpoints, evaluacion en TEST, metricas por umbral y evaluacion de onsets.
+En este corte, el script principal de entrenamiento controlado era `SCRIPTS/mini_train_custom_split.py`. En la reorganizacion vigente, usar `SCRIPTS/training/train_custom_split.py`; los wrappers historicos se conservan solo por compatibilidad.
 
 La corrida mas relevante hasta ahora es:
 
@@ -94,7 +98,7 @@ Resultado general:
 - T14 sigue siendo la clase mas debil en evaluacion onset.
 - Los mejores umbrales no necesariamente son 0.5; los resultados utiles aparecen mas cerca de 0.03 a 0.1 segun clase.
 
-## Archivos importantes
+## Archivos importantes en este corte
 
 - `PHRASE_GENERATOR/SRC/phrase_generator.py`: generacion procedural y generacion directa de splits.
 - `PHRASE_GENERATOR/SRC/generation_profiles.py`: perfiles musicales.
@@ -107,7 +111,7 @@ Resultado general:
 - `adtof/model/dataLoader.py`: soporte `custom_split`.
 - `adtof/config.py`: vocabulario vibratorio de 5 clases.
 
-## Siguientes pasos sugeridos
+## Siguientes pasos sugeridos en este corte
 
 1. Repetir entrenamiento con mas pasos por epoch y/o mas epochs usando el dataset `CUSTOM_5CLASS_MULTIPROFILE_LOW_FULL`.
 2. Evaluar calibracion de umbrales por clase, especialmente para T12, T14 y T16.
